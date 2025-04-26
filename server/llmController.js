@@ -298,7 +298,7 @@ exports.generateGraph = async (req, res) => {
     // Check for API key
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      console.log("No OpenAI API key found. Using fallback data.");
+      console.warn('No API key found. Using fallback data.');
       return res.json({
         nodes: initialNodes,
         edges: initialEdges,
