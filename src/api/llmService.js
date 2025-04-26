@@ -120,52 +120,10 @@ export const fetchGraphData = async (prompt) => {
  */
 export const fetchNodeExpansion = async (nodeId, limit = 3, expansionType = 'all') => {
   try {
-    // In a real implementation, call the server endpoint
+    // Always use the real API endpoint
     const endpoint = `/api/expand-node/${nodeId}?limit=${limit}&expansion_type=${expansionType}`;
     
-    // If we're in development mode, use mock data if available
-    if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' && !window.forceApiCall) {
-      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
-      
-      // Return hardcoded expansion if available
-      if (nodeExpansions[nodeId]) {
-        return nodeExpansions[nodeId];
-      }
-      
-      // Generate mock expansion for testing
-      const sourceNode = initialNodes.find(n => n.id === nodeId) || { 
-        id: nodeId, 
-        label: `Node ${nodeId}`, 
-        type: "concept" 
-      };
-      
-      const mockNodes = Array.from({ length: limit }, (_, i) => ({
-        id: nodeId * 100 + i + 1,
-        label: `Related to ${sourceNode.label} ${i + 1}`,
-        description: `This is a mock connected node for ${sourceNode.label}.`,
-        type: ["concept", "entity", "process", "technology"][Math.floor(Math.random() * 4)],
-        properties: {
-          importance: Math.round((0.5 + Math.random() * 0.4) * 10) / 10,
-          domain: ["energy", "technology", "science", "society"][Math.floor(Math.random() * 4)]
-        }
-      }));
-      
-      const mockEdges = mockNodes.map(node => ({
-        source: nodeId,
-        target: node.id,
-        type: ["is_a", "part_of", "related_to", "leads_to"][Math.floor(Math.random() * 4)],
-        weight: Math.round((0.6 + Math.random() * 0.3) * 10) / 10,
-        bidirectional: Math.random() > 0.7
-      }));
-      
-      return {
-        sourceNode,
-        nodes: mockNodes,
-        edges: mockEdges
-      };
-    }
-    
-    // Make the actual API call
+    // Make the API call
     const response = await fetch(endpoint);
     
     if (!response.ok) {

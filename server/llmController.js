@@ -1,6 +1,11 @@
 // Controller for handling LLM API requests
 const axios = require("axios");
 
+// In-memory store for recently generated graphs
+const memoryStore = {
+  lastGeneratedGraph: null
+};
+
 // Sample initial nodes for fallback
 const initialNodes = [
   {
@@ -285,7 +290,7 @@ const expandNodeData = {
 
 /**
  * Generate a knowledge graph from a user prompt
- * Uses OpenAI or other LLM APIs to create nodes and relationships
+ * Uses Gemini API to create nodes and relationships
  */
 exports.generateGraph = async (req, res) => {
   try {
@@ -299,6 +304,14 @@ exports.generateGraph = async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
       console.warn('No Gemini API key found. Using fallback data.');
+      
+      // Store the fallback data in memory
+      memoryStore.lastGeneratedGraph = {
+        nodes: initialNodes,
+        edges: initialEdges,
+        clusters: initialClusters
+      };
+      
       return res.json({
         nodes: initialNodes,
         edges: initialEdges,
@@ -329,6 +342,7 @@ exports.generateGraph = async (req, res) => {
       Each edge should have:
       - Source and target node IDs
       - A relationship type (is_a, part_of, related_to, leads_to, depends_on, contradicts, similar_to, example_of)
+      - A description explaining the relationship between the two nodes (1-2 sentences)
       - A weight value (0-1)
       - Whether it's bidirectional
       
@@ -344,7 +358,7 @@ exports.generateGraph = async (req, res) => {
           ...
         ],
         "edges": [
-          { "source": 1, "target": 2, "type": "is_a", "weight": 0.8, "bidirectional": false },
+          { "source": 1, "target": 2, "type": "is_a", "weight": 0.8, "bidirectional": false, "description": "Description of how these nodes relate" },
           ...
         ],
         "clusters": [
@@ -429,6 +443,14 @@ exports.generateGraph = async (req, res) => {
         generated: new Date().toISOString(),
         version: "1.0",
       };
+      
+      // Store the graph data in memory for expand-node endpoint to use
+      memoryStore.lastGeneratedGraph = {
+        nodes: graphData.nodes,
+        edges: graphData.edges,
+        clusters: graphData.clusters || []
+      };
+      
     } catch (parseError) {
       console.error("Error parsing LLM response:", parseError);
       // Use fallback data on parsing error
@@ -442,6 +464,13 @@ exports.generateGraph = async (req, res) => {
           version: "1.0",
         },
       };
+      
+      // Store the fallback data in memory
+      memoryStore.lastGeneratedGraph = {
+        nodes: initialNodes,
+        edges: initialEdges,
+        clusters: initialClusters
+      };
     }
 
     // Return the graph data
@@ -450,7 +479,7 @@ exports.generateGraph = async (req, res) => {
     console.error("Error generating graph:", error);
 
     // Return fallback data on error
-    res.json({
+    const fallbackData = {
       nodes: initialNodes,
       edges: initialEdges,
       clusters: initialClusters,
@@ -459,7 +488,16 @@ exports.generateGraph = async (req, res) => {
         generated: new Date().toISOString(),
         version: "1.0",
       },
-    });
+    };
+    
+    // Store the fallback data in memory
+    memoryStore.lastGeneratedGraph = {
+      nodes: initialNodes,
+      edges: initialEdges,
+      clusters: initialClusters
+    };
+    
+    res.json(fallbackData);
   }
 };
 
@@ -480,20 +518,33 @@ exports.expandNode = async (req, res) => {
       return res.status(400).json({ error: "Invalid node ID" });
     }
 
-    // Find the node to expand
-    const sourceNode = initialNodes.find((n) => n.id === id);
-    if (!sourceNode) {
-      return res.status(404).json({ error: "Node not found" });
-    }
-
-    // Check if we already have expansion data for this node
+    // Check if we have predefined expansion data for this node
     if (expandNodeData[id]) {
       const expansion = expandNodeData[id];
+      
+      // Find the actual source node to get accurate information
+      let sourceNodeInfo;
+      if (memoryStore.lastGeneratedGraph && memoryStore.lastGeneratedGraph.nodes) {
+        sourceNodeInfo = memoryStore.lastGeneratedGraph.nodes.find((n) => n.id === id);
+      }
+      
+      if (!sourceNodeInfo) {
+        sourceNodeInfo = initialNodes.find((n) => n.id === id);
+      }
+      
+      if (!sourceNodeInfo) {
+        sourceNodeInfo = {
+          id,
+          label: expansion.nodes[0] ? expansion.nodes[0].label.split(' ')[0] : `Node ${id}`,
+          type: "concept"
+        };
+      }
+      
       return res.json({
         sourceNode: {
-          id: sourceNode.id,
-          label: sourceNode.label,
-          type: sourceNode.type,
+          id: sourceNodeInfo.id,
+          label: sourceNodeInfo.label,
+          type: sourceNodeInfo.type || "concept",
         },
         nodes: expansion.nodes.slice(0, limit),
         edges: expansion.edges.filter((e) =>
@@ -502,6 +553,24 @@ exports.expandNode = async (req, res) => {
             .some((n) => e.source === n.id || e.target === n.id)
         ),
       });
+    }
+    
+    // Find the node to expand from our most recently generated graph
+    let sourceNode;
+    
+    // First check if we have a generated graph in memory
+    if (memoryStore.lastGeneratedGraph && memoryStore.lastGeneratedGraph.nodes) {
+      sourceNode = memoryStore.lastGeneratedGraph.nodes.find((n) => n.id === id);
+    }
+    
+    // If not found in memory, try the initial nodes as fallback
+    if (!sourceNode) {
+      sourceNode = initialNodes.find((n) => n.id === id);
+    }
+    
+    // If node still not found, return error
+    if (!sourceNode) {
+      return res.status(404).json({ error: "Node not found" });
     }
 
     // Check for API key
@@ -519,7 +588,7 @@ exports.expandNode = async (req, res) => {
       You are an AI specialized in generating semantic network expansions for knowledge graphs.
       Generate ${limit} connected nodes for the concept: "${
       sourceNode.label
-    }" (${sourceNode.description}).
+    }" (${sourceNode.description || "No description available"}).
       
       Each node should have:
       - A unique id starting from ${id * 100 + 1}
@@ -634,11 +703,26 @@ exports.expandNode = async (req, res) => {
     const limit = req.query.limit ? Number.parseInt(req.query.limit, 10) : 3;
 
     // Find the source node
-    const sourceNode = initialNodes.find((n) => n.id === id) || {
-      id: id,
-      label: `Node ${id}`,
-      type: "concept",
-    };
+    let sourceNode = null;
+    
+    // Check memory store first
+    if (memoryStore.lastGeneratedGraph && memoryStore.lastGeneratedGraph.nodes) {
+      sourceNode = memoryStore.lastGeneratedGraph.nodes.find((n) => n.id === id);
+    }
+    
+    // Fallback to initial nodes
+    if (!sourceNode) {
+      sourceNode = initialNodes.find((n) => n.id === id);
+    }
+    
+    // If still not found, create a generic one
+    if (!sourceNode) {
+      sourceNode = {
+        id: id,
+        label: `Node ${id}`,
+        type: "concept",
+      };
+    }
 
     res.json(generateFallbackExpansion(sourceNode, limit));
   }
