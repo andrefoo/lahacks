@@ -1,23 +1,57 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import BiasIndicator from './BiasIndicator';
 
 // Component for rendering a single node in the knowledge graph
 const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster, isSelected }) => {
   // Standardized radius for all nodes
   const radius = 30;
+  const textRef = useRef(null);
+  const [wrappedText, setWrappedText] = useState([]);
   
-  // Different colors based on node type
-  const getNodeColor = () => {
-    const typeColors = {
-      concept: '#4285F4',     // Blue
-      entity: '#34A853',      // Green
-      process: '#FBBC05',     // Yellow
-      property: '#EA4335',    // Red
-      technology: '#9C27B0',  // Purple
-      question: '#FF9800'     // Orange
-    };
+  // Function to wrap text into multiple lines
+  const wrapText = (text, maxWidth) => {
+    const words = text.split(' ');
+    const lines = [];
+    let currentLine = words[0];
+
+    for (let i = 1; i < words.length; i++) {
+      const word = words[i];
+      const testLine = currentLine + ' ' + word;
+      // Approximate width based on character count
+      const testWidth = testLine.length * 6; // Rough estimate of character width
+      
+      if (testWidth <= maxWidth) {
+        currentLine = testLine;
+      } else {
+        lines.push(currentLine);
+        currentLine = word;
+      }
+    }
+    lines.push(currentLine);
+    return lines;
+  };
+
+  useEffect(() => {
+    if (node.label) {
+      // Calculate max width based on circle radius
+      const maxWidth = radius * 1.8; // Allow some padding
+      setWrappedText(wrapText(node.label, maxWidth));
+    }
+  }, [node.label, radius]);
+
+  // Calculate appropriate text size class
+  const getTextSizeClass = () => {
+    if (!textRef.current) return 'size-md';
     
-    return typeColors[node.type] || '#888888'; // Gray fallback
+    const text = node.label;
+    const length = text.length;
+    const words = text.split(' ').length;
+    
+    // Adjust these thresholds based on your needs
+    if (length > 20 || words > 3) return 'size-xs';
+    if (length > 15 || words > 2) return 'size-sm';
+    if (length > 10) return 'size-md';
+    return 'size-lg';
   };
   
   const handleClick = () => {
@@ -30,37 +64,25 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster, isSelec
     }
   };
 
-  // Truncate text to fit within node
-  const truncateText = (text, maxLength) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength - 3) + '...';
-  };
-  
+  // Calculate vertical offset for multiple lines
+  const lineHeight = 12; // Adjust based on your font size
+  const totalHeight = wrappedText.length * lineHeight;
+  const startY = -totalHeight / 2 + lineHeight / 2;
+
   return (
     <g
       className={`graph-node ${node.type || ''} ${isExpanded ? 'expanded' : ''} ${isInActiveCluster ? 'active-cluster' : ''} ${isSelected ? 'selected' : ''}`}
       transform={`translate(${node.x || 0}, ${node.y || 0})`}
       onClick={handleClick}
       onKeyPress={handleKeyPress}
-      style={{ cursor: 'pointer' }}
       data-node-id={node.id}
       tabIndex="0"
       aria-expanded={isExpanded ? 'true' : 'false'}
       aria-label={`Node: ${node.label} (${node.type || 'unknown type'})`}
     >
-      <foreignObject width="1" height="1" style={{ overflow: 'visible' }}>
+      <foreignObject>
         <button
           type="button"
-          style={{ 
-            background: 'none',
-            border: 'none',
-            padding: 0,
-            width: '1px',
-            height: '1px',
-            position: 'absolute',
-            opacity: 0,
-            pointerEvents: 'none'
-          }}
           aria-expanded={isExpanded ? 'true' : 'false'}
           aria-label={`Node: ${node.label} (${node.type || 'unknown type'})`}
         />
@@ -69,7 +91,6 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster, isSelec
       {/* Node circle */}
       <circle
         r={radius}
-        fill={getNodeColor()}
         strokeWidth={isExpanded ? 3 : 1.5}
         className="node-circle"
       />
@@ -91,24 +112,23 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster, isSelec
         <circle
           r={radius + 4}
           className="expanded-indicator"
-          fill="none"
-          stroke="#444"
-          strokeWidth="1.5"
-          strokeDasharray="2 2"
         />
       )}
       
-      {/* Node label */}
-      <text
-        textAnchor="middle"
-        dy=".3em"
-        fontSize="10"
-        fontWeight="bold"
-        fill="#fff"
-        className="node-label"
-      >
-        {truncateText(node.label, 15)}
-      </text>
+      {/* Node label - wrapped text */}
+      <g ref={textRef}>
+        {wrappedText.map((line, index) => (
+          <text
+            key={index}
+            className={`node-label ${getTextSizeClass()}`}
+            textAnchor="middle"
+            dominantBaseline="middle"
+            y={startY + index * lineHeight}
+          >
+            {line}
+          </text>
+        ))}
+      </g>
       
       {/* Node type indicator */}
       <text
