@@ -6,288 +6,6 @@ const memoryStore = {
   lastGeneratedGraph: null
 };
 
-// Sample initial nodes for fallback
-const initialNodes = [
-  {
-    id: 1,
-    label: "Decentralized Energy Grids",
-    description:
-      "Systems that distribute energy generation across multiple small-scale sources rather than centralized power plants.",
-    type: "concept",
-    properties: { importance: 0.9, domain: "energy" },
-  },
-  {
-    id: 2,
-    label: "Renewable Energy Sources",
-    description:
-      "Energy sources that are naturally replenished on a human timescale, such as sunlight, wind, rain, tides, waves, and geothermal heat.",
-    type: "concept",
-    properties: { importance: 0.8, domain: "energy" },
-  },
-  {
-    id: 3,
-    label: "Grid Resilience",
-    description:
-      "The ability of power systems to withstand and recover from extreme events and disruptions.",
-    type: "property",
-    properties: { importance: 0.7, domain: "energy" },
-  },
-  {
-    id: 4,
-    label: "Energy Storage Technologies",
-    description:
-      "Methods of storing energy for later use, including batteries, pumped hydro, and thermal storage.",
-    type: "technology",
-    properties: { importance: 0.8, domain: "energy" },
-  },
-  {
-    id: 5,
-    label: "Microgrid Implementation",
-    description:
-      "Small-scale power grids that can operate independently or in coordination with the main grid.",
-    type: "process",
-    properties: { importance: 0.6, domain: "energy" },
-  },
-  {
-    id: 6,
-    label: "Smart Grid Technologies",
-    description:
-      "Digital technology that allows for two-way communication between utilities and consumers.",
-    type: "technology",
-    properties: { importance: 0.7, domain: "technology" },
-  },
-  {
-    id: 7,
-    label: "Energy Democratization",
-    description:
-      "Shift of power from centralized entities to individuals and communities in energy production and distribution.",
-    type: "concept",
-    properties: { importance: 0.6, domain: "society" },
-  },
-  {
-    id: 8,
-    label: "Regulatory Frameworks",
-    description:
-      "Legal and policy structures governing energy production, distribution, and consumption.",
-    type: "process",
-    properties: { importance: 0.7, domain: "policy" },
-  },
-  {
-    id: 9,
-    label: "Community-Owned Energy",
-    description:
-      "Energy projects owned and operated by local communities rather than by corporations or governments.",
-    type: "entity",
-    properties: { importance: 0.5, domain: "society" },
-  },
-  {
-    id: 10,
-    label: "Grid Modernization",
-    description:
-      "Upgrading electricity infrastructure to improve reliability, efficiency, security, and integration of renewables.",
-    type: "process",
-    properties: { importance: 0.8, domain: "technology" },
-  },
-];
-
-// Sample edges for fallback
-const initialEdges = [
-  {
-    source: 1,
-    target: 2,
-    type: "depends_on",
-    weight: 0.9,
-    bidirectional: false,
-  },
-  { source: 1, target: 3, type: "leads_to", weight: 0.7, bidirectional: false },
-  {
-    source: 1,
-    target: 4,
-    type: "depends_on",
-    weight: 0.8,
-    bidirectional: false,
-  },
-  { source: 1, target: 5, type: "is_a", weight: 0.6, bidirectional: false },
-  {
-    source: 2,
-    target: 4,
-    type: "related_to",
-    weight: 0.7,
-    bidirectional: true,
-  },
-  { source: 3, target: 10, type: "part_of", weight: 0.8, bidirectional: false },
-  {
-    source: 5,
-    target: 6,
-    type: "depends_on",
-    weight: 0.7,
-    bidirectional: false,
-  },
-  { source: 7, target: 9, type: "leads_to", weight: 0.8, bidirectional: false },
-  {
-    source: 8,
-    target: 10,
-    type: "related_to",
-    weight: 0.6,
-    bidirectional: true,
-  },
-  {
-    source: 9,
-    target: 7,
-    type: "example_of",
-    weight: 0.7,
-    bidirectional: false,
-  },
-];
-
-// Sample clusters for fallback
-const initialClusters = [
-  {
-    id: "c1",
-    label: "Energy Infrastructure",
-    description: "Physical and digital systems for energy distribution",
-    nodes: [1, 3, 5, 10],
-  },
-  {
-    id: "c2",
-    label: "Energy Sources",
-    description: "Origins and generation of power",
-    nodes: [2, 4],
-  },
-  {
-    id: "c3",
-    label: "Social Aspects",
-    description: "Community and social dimensions of energy",
-    nodes: [7, 9],
-  },
-  {
-    id: "c4",
-    label: "Technology & Innovation",
-    description: "Technological advancements in energy systems",
-    nodes: [4, 6, 10],
-  },
-  {
-    id: "c5",
-    label: "Governance",
-    description: "Rules and frameworks for energy management",
-    nodes: [8],
-  },
-];
-
-// Sample child nodes for expand-node endpoint
-const expandNodeData = {
-  1: {
-    nodes: [
-      {
-        id: 101,
-        label: "Peer-to-Peer Energy Trading",
-        description:
-          "Systems allowing consumers to buy and sell excess energy directly to each other.",
-        type: "process",
-        properties: { importance: 0.7, domain: "energy" },
-      },
-      {
-        id: 102,
-        label: "Blockchain for Energy",
-        description:
-          "Using distributed ledger technology to manage energy transactions.",
-        type: "technology",
-        properties: { importance: 0.6, domain: "technology" },
-      },
-      {
-        id: 103,
-        label: "Virtual Power Plants",
-        description:
-          "Cloud-based distributed power plants that aggregate capacity from multiple sources.",
-        type: "concept",
-        properties: { importance: 0.8, domain: "energy" },
-      },
-    ],
-    edges: [
-      {
-        source: 1,
-        target: 101,
-        type: "leads_to",
-        weight: 0.8,
-        bidirectional: false,
-      },
-      {
-        source: 1,
-        target: 102,
-        type: "depends_on",
-        weight: 0.6,
-        bidirectional: false,
-      },
-      {
-        source: 1,
-        target: 103,
-        type: "part_of",
-        weight: 0.9,
-        bidirectional: false,
-      },
-      {
-        source: 101,
-        target: 102,
-        type: "related_to",
-        weight: 0.7,
-        bidirectional: true,
-      },
-    ],
-  },
-  2: {
-    nodes: [
-      {
-        id: 201,
-        label: "Solar Photovoltaics",
-        description:
-          "Technology converting sunlight directly into electricity using semiconducting materials.",
-        type: "technology",
-        properties: { importance: 0.8, domain: "energy" },
-      },
-      {
-        id: 202,
-        label: "Wind Power Systems",
-        description:
-          "Conversion of wind energy into electrical power using wind turbines.",
-        type: "technology",
-        properties: { importance: 0.7, domain: "energy" },
-      },
-      {
-        id: 203,
-        label: "Hydroelectric Generation",
-        description:
-          "Electricity generated by the gravitational force of falling or flowing water.",
-        type: "technology",
-        properties: { importance: 0.6, domain: "energy" },
-      },
-    ],
-    edges: [
-      {
-        source: 2,
-        target: 201,
-        type: "example_of",
-        weight: 0.9,
-        bidirectional: false,
-      },
-      {
-        source: 2,
-        target: 202,
-        type: "example_of",
-        weight: 0.8,
-        bidirectional: false,
-      },
-      {
-        source: 2,
-        target: 203,
-        type: "example_of",
-        weight: 0.7,
-        bidirectional: false,
-      },
-    ],
-  },
-  // Add more for other nodes as needed
-};
-
 /**
  * Generate a knowledge graph from a user prompt
  * Uses Gemini API to create nodes and relationships
@@ -303,25 +21,7 @@ exports.generateGraph = async (req, res) => {
     // Check for API key
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.warn('No Gemini API key found. Using fallback data.');
-      
-      // Store the fallback data in memory
-      memoryStore.lastGeneratedGraph = {
-        nodes: initialNodes,
-        edges: initialEdges,
-        clusters: initialClusters
-      };
-      
-      return res.json({
-        nodes: initialNodes,
-        edges: initialEdges,
-        clusters: initialClusters,
-        metadata: {
-          prompt: prompt,
-          generated: new Date().toISOString(),
-          version: "1.0",
-        },
-      });
+      return res.status(500).json({ error: "API key is not configured" });
     }
 
     // Create system prompt for the LLM to generate a knowledge graph
@@ -401,10 +101,9 @@ exports.generateGraph = async (req, res) => {
       return res.status(500).json({ error: "Error calling Gemini API" });
     }
     
-    // Parse the Gemini response (different from OpenAI format)
+    // Parse the Gemini response
     let content;
     try {
-      // Gemini response has a different schema
       if (response.data?.candidates && response.data.candidates.length > 0) {
         const candidate = response.data.candidates[0];
         if (candidate?.content?.parts && candidate.content.parts.length > 0) {
@@ -453,51 +152,14 @@ exports.generateGraph = async (req, res) => {
       
     } catch (parseError) {
       console.error("Error parsing LLM response:", parseError);
-      // Use fallback data on parsing error
-      graphData = {
-        nodes: initialNodes,
-        edges: initialEdges,
-        clusters: initialClusters,
-        metadata: {
-          prompt: prompt,
-          generated: new Date().toISOString(),
-          version: "1.0",
-        },
-      };
-      
-      // Store the fallback data in memory
-      memoryStore.lastGeneratedGraph = {
-        nodes: initialNodes,
-        edges: initialEdges,
-        clusters: initialClusters
-      };
+      return res.status(500).json({ error: "Failed to parse API response" });
     }
 
     // Return the graph data
     res.json(graphData);
   } catch (error) {
     console.error("Error generating graph:", error);
-
-    // Return fallback data on error
-    const fallbackData = {
-      nodes: initialNodes,
-      edges: initialEdges,
-      clusters: initialClusters,
-      metadata: {
-        prompt: req.body.prompt || "unknown",
-        generated: new Date().toISOString(),
-        version: "1.0",
-      },
-    };
-    
-    // Store the fallback data in memory
-    memoryStore.lastGeneratedGraph = {
-      nodes: initialNodes,
-      edges: initialEdges,
-      clusters: initialClusters
-    };
-    
-    res.json(fallbackData);
+    return res.status(500).json({ error: "Failed to generate graph" });
   }
 };
 
@@ -518,70 +180,45 @@ exports.expandNode = async (req, res) => {
       return res.status(400).json({ error: "Invalid node ID" });
     }
 
-    // Check if we have predefined expansion data for this node
-    if (expandNodeData[id]) {
-      const expansion = expandNodeData[id];
-      
-      // Find the actual source node to get accurate information
-      let sourceNodeInfo;
-      if (memoryStore.lastGeneratedGraph && memoryStore.lastGeneratedGraph.nodes) {
-        sourceNodeInfo = memoryStore.lastGeneratedGraph.nodes.find((n) => n.id === id);
-      }
-      
-      if (!sourceNodeInfo) {
-        sourceNodeInfo = initialNodes.find((n) => n.id === id);
-      }
-      
-      if (!sourceNodeInfo) {
-        sourceNodeInfo = {
-          id,
-          label: expansion.nodes[0] ? expansion.nodes[0].label.split(' ')[0] : `Node ${id}`,
-          type: "concept"
-        };
-      }
-      
-      return res.json({
-        sourceNode: {
-          id: sourceNodeInfo.id,
-          label: sourceNodeInfo.label,
-          type: sourceNodeInfo.type || "concept",
-        },
-        nodes: expansion.nodes.slice(0, limit),
-        edges: expansion.edges.filter((e) =>
-          expansion.nodes
-            .slice(0, limit)
-            .some((n) => e.source === n.id || e.target === n.id)
-        ),
-      });
-    }
-    
     // Find the node to expand from our most recently generated graph
-    let sourceNode;
-    
-    // First check if we have a generated graph in memory
-    if (memoryStore.lastGeneratedGraph && memoryStore.lastGeneratedGraph.nodes) {
-      sourceNode = memoryStore.lastGeneratedGraph.nodes.find((n) => n.id === id);
+    if (!memoryStore.lastGeneratedGraph?.nodes) {
+      return res.status(404).json({ error: "No graph data exists. Generate a graph first." });
     }
     
-    // If not found in memory, try the initial nodes as fallback
-    if (!sourceNode) {
-      sourceNode = initialNodes.find((n) => n.id === id);
-    }
+    const sourceNode = memoryStore.lastGeneratedGraph.nodes.find((n) => n.id === id);
     
-    // If node still not found, return error
+    // If node not found, return error
     if (!sourceNode) {
-      return res.status(404).json({ error: "Node not found" });
+      return res.status(404).json({ error: "Node not found in current graph" });
     }
 
     // Check for API key
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.log("No Gemini API key found. Using generated expansion data.");
-
-      // Generate fallback expansion
-      const expansion = generateFallbackExpansion(sourceNode, limit);
-      return res.json(expansion);
+      return res.status(500).json({ error: "API key is not configured" });
     }
+
+    // Get information about existing nodes to avoid duplicates
+    const existingNodes = memoryStore.lastGeneratedGraph.nodes;
+    const existingNodeInfo = existingNodes.map(node => ({
+      id: node.id,
+      label: node.label,
+      type: node.type
+    }));
+    
+    // Get a list of nodes already connected to this node
+    const connectedNodes = memoryStore.lastGeneratedGraph.edges
+      .filter(edge => edge.source === id || edge.target === id)
+      .map(edge => {
+        const connectedId = edge.source === id ? edge.target : edge.source;
+        const connectedNode = existingNodes.find(n => n.id === connectedId);
+        return connectedNode ? {
+          id: connectedNode.id,
+          label: connectedNode.label,
+          relationship: edge.type
+        } : null;
+      })
+      .filter(Boolean);
 
     // Create system prompt for the LLM to generate connected nodes
     const systemPrompt = `
@@ -589,6 +226,15 @@ exports.expandNode = async (req, res) => {
       Generate ${limit} connected nodes for the concept: "${
       sourceNode.label
     }" (${sourceNode.description || "No description available"}).
+      
+      The knowledge graph already contains the following nodes:
+      ${JSON.stringify(existingNodeInfo, null, 2)}
+      
+      And this source node is already connected to:
+      ${JSON.stringify(connectedNodes, null, 2)}
+      
+      IMPORTANT: Avoid generating nodes that duplicate or are too similar to existing nodes in the graph.
+      Generate nodes that are semantically distinct from the existing ones.
       
       Each node should have:
       - A unique id starting from ${id * 100 + 1}
@@ -600,6 +246,7 @@ exports.expandNode = async (req, res) => {
       Also generate edges connecting these new nodes to the source node and to each other with:
       - Source and target node IDs
       - A relationship type (is_a, part_of, related_to, leads_to, depends_on, contradicts, similar_to, example_of)
+      - A description explaining the relationship between the two nodes (1-2 sentences)
       - A weight value (0-1)
       - Whether it's bidirectional
       
@@ -614,7 +261,7 @@ exports.expandNode = async (req, res) => {
         "edges": [
           { "source": ${id}, "target": ${
       id * 100 + 1
-    }, "type": "is_a", "weight": 0.8, "bidirectional": false },
+    }, "type": "is_a", "weight": 0.8, "bidirectional": false, "description": "Description of how these nodes relate" },
           ...
         ]
       }
@@ -647,7 +294,7 @@ exports.expandNode = async (req, res) => {
 
     console.log("Received Gemini API response for node expansion");
 
-    // Parse the Gemini response (different from OpenAI format)
+    // Parse the Gemini response
     let content;
     if (response.data?.candidates && response.data.candidates.length > 0) {
       const candidate = response.data.candidates[0];
@@ -677,6 +324,53 @@ exports.expandNode = async (req, res) => {
       ) {
         throw new Error("Invalid response structure");
       }
+      
+      // Filter out duplicate nodes based on label or description similarity
+      const filteredNodes = parsed.nodes.filter(newNode => {
+        // Check if there's a node with the same ID (direct duplicate)
+        const idDuplicate = existingNodes.some(existingNode => existingNode.id === newNode.id);
+        if (idDuplicate) return false;
+        
+        // Check for label similarity
+        const labelDuplicate = existingNodes.some(existingNode => {
+          // Exact match
+          if (existingNode.label.toLowerCase() === newNode.label.toLowerCase()) return true;
+          
+          // Similar enough (contains each other or >70% the same)
+          const existingLower = existingNode.label.toLowerCase();
+          const newLower = newNode.label.toLowerCase();
+          
+          return existingLower.includes(newLower) || 
+                 newLower.includes(existingLower);
+        });
+        
+        return !labelDuplicate;
+      });
+      
+      // If we filtered out all nodes, return the original nodes
+      // but with uniqueness enforced through ID changes
+      const finalNodes = filteredNodes.length > 0 ? filteredNodes : 
+        parsed.nodes.map((node, index) => ({
+          ...node,
+          id: id * 1000 + index + 1, // Use a larger multiplier to avoid conflicts
+          label: `${node.label} (Variant)` // Slightly modify label
+        }));
+      
+      // Update edges to use the new node IDs if needed
+      const finalEdges = parsed.edges.filter(edge => {
+        // Keep edges connected to source node
+        if (edge.source === id) {
+          return finalNodes.some(n => n.id === edge.target);
+        }
+        if (edge.target === id) {
+          return finalNodes.some(n => n.id === edge.source);
+        }
+        
+        // For edges between new nodes
+        const sourceExists = finalNodes.some(n => n.id === edge.source);
+        const targetExists = finalNodes.some(n => n.id === edge.target);
+        return sourceExists && targetExists;
+      });
 
       nodeExpansion = {
         sourceNode: {
@@ -684,127 +378,40 @@ exports.expandNode = async (req, res) => {
           label: sourceNode.label,
           type: sourceNode.type,
         },
-        nodes: parsed.nodes,
-        edges: parsed.edges,
+        nodes: finalNodes,
+        edges: finalEdges,
       };
+      
+      // Add expanded nodes to the memory store so they can be expanded later
+      if (memoryStore.lastGeneratedGraph && Array.isArray(memoryStore.lastGeneratedGraph.nodes)) {
+        memoryStore.lastGeneratedGraph.nodes = [
+          ...memoryStore.lastGeneratedGraph.nodes,
+          ...finalNodes.filter(newNode => 
+            !memoryStore.lastGeneratedGraph.nodes.some(existingNode => existingNode.id === newNode.id)
+          )
+        ];
+        
+        // Also add the new edges
+        if (Array.isArray(memoryStore.lastGeneratedGraph.edges)) {
+          memoryStore.lastGeneratedGraph.edges = [
+            ...memoryStore.lastGeneratedGraph.edges,
+            ...finalEdges.filter(newEdge => 
+              !memoryStore.lastGeneratedGraph.edges.some(existingEdge => 
+                existingEdge.source === newEdge.source && existingEdge.target === newEdge.target
+              )
+            )
+          ];
+        }
+      }
     } catch (parseError) {
       console.error("Error parsing LLM response:", parseError);
-      // Use fallback data on parsing error
-      nodeExpansion = generateFallbackExpansion(sourceNode, limit);
+      return res.status(500).json({ error: "Failed to parse node expansion data" });
     }
 
     // Return the expansion data
     res.json(nodeExpansion);
   } catch (error) {
     console.error("Error expanding node:", error);
-
-    // Generate fallback on error
-    const id = Number.parseInt(req.params.nodeId, 10);
-    const limit = req.query.limit ? Number.parseInt(req.query.limit, 10) : 3;
-
-    // Find the source node
-    let sourceNode = null;
-    
-    // Check memory store first
-    if (memoryStore.lastGeneratedGraph && memoryStore.lastGeneratedGraph.nodes) {
-      sourceNode = memoryStore.lastGeneratedGraph.nodes.find((n) => n.id === id);
-    }
-    
-    // Fallback to initial nodes
-    if (!sourceNode) {
-      sourceNode = initialNodes.find((n) => n.id === id);
-    }
-    
-    // If still not found, create a generic one
-    if (!sourceNode) {
-      sourceNode = {
-        id: id,
-        label: `Node ${id}`,
-        type: "concept",
-      };
-    }
-
-    res.json(generateFallbackExpansion(sourceNode, limit));
+    return res.status(500).json({ error: "Failed to expand node" });
   }
 };
-
-/**
- * Generate fallback expansion data for a node
- * @param {Object} sourceNode - The node to expand
- * @param {number} limit - Number of connected nodes to generate
- * @returns {Object} - Expansion data with nodes and edges
- */
-function generateFallbackExpansion(sourceNode, limit = 3) {
-  const baseChildId = sourceNode.id * 100;
-  const nodeTypes = ["concept", "entity", "process", "property", "technology"];
-  const relationshipTypes = [
-    "is_a",
-    "part_of",
-    "related_to",
-    "leads_to",
-    "depends_on",
-    "example_of",
-  ];
-  const domains = [
-    "energy",
-    "technology",
-    "science",
-    "society",
-    "economy",
-    "environment",
-  ];
-
-  // Generate connected nodes
-  const nodes = Array.from({ length: limit }, (_, index) => {
-    const childId = baseChildId + index + 1;
-    return {
-      id: childId,
-      label: `${sourceNode.label} Aspect ${index + 1}`,
-      description: `A related aspect of ${sourceNode.label} focused on specific applications and implications.`,
-      type: nodeTypes[Math.floor(Math.random() * nodeTypes.length)],
-      properties: {
-        importance: Math.round((0.5 + Math.random() * 0.4) * 10) / 10,
-        domain: domains[Math.floor(Math.random() * domains.length)],
-      },
-    };
-  });
-
-  // Generate edges
-  const edges = [];
-
-  // Connect source to all children
-  nodes.forEach((node) => {
-    edges.push({
-      source: sourceNode.id,
-      target: node.id,
-      type: relationshipTypes[
-        Math.floor(Math.random() * relationshipTypes.length)
-      ],
-      weight: Math.round((0.6 + Math.random() * 0.3) * 10) / 10,
-      bidirectional: Math.random() > 0.7,
-    });
-  });
-
-  // Add some edges between children
-  if (nodes.length >= 2) {
-    for (let i = 0; i < Math.min(nodes.length - 1, 2); i++) {
-      edges.push({
-        source: nodes[i].id,
-        target: nodes[i + 1].id,
-        type: "related_to",
-        weight: Math.round((0.5 + Math.random() * 0.3) * 10) / 10,
-        bidirectional: Math.random() > 0.5,
-      });
-    }
-  }
-
-  return {
-    sourceNode: {
-      id: sourceNode.id,
-      label: sourceNode.label,
-      type: sourceNode.type || "concept",
-    },
-    nodes,
-    edges,
-  };
-}

@@ -13,13 +13,17 @@ function App() {
   const [isGenerated, setIsGenerated] = useState(false);
   const [graphData, setGraphData] = useState(null);
   const [activeNode, setActiveNode] = useState(null);
+  const [activeEdge, setActiveEdge] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [error, setError] = useState(null);
 
   // Handle prompt submission
   const handlePromptSubmit = async (prompt) => {
     if (!prompt.trim()) return;
 
     setIsLoading(true);
+    setError(null);
+    
     try {
       // Fetch graph data from LLM service
       const data = await fetchGraphData(prompt);
@@ -27,6 +31,7 @@ function App() {
       setIsGenerated(true);
     } catch (error) {
       console.error('Error generating graph:', error);
+      setError("Failed to generate graph. Please try again with a different prompt.");
     } finally {
       setIsLoading(false);
     }
@@ -39,8 +44,33 @@ function App() {
       setActiveNode(null);
       setShowSidebar(false);
     } else {
-      // Select the new node
+      // Select the new node and clear any active edge
       setActiveNode(node);
+      setActiveEdge(null);
+      setShowSidebar(true);
+    }
+  };
+
+  // Handle edge click
+  const handleEdgeClick = (edge) => {
+    // If clicking the same edge, deselect it
+    if (activeEdge && activeEdge.source === edge.source && activeEdge.target === edge.target) {
+      setActiveEdge(null);
+      setShowSidebar(false);
+    } else {
+      // Select the new edge and clear any active node
+      // Add source and target node labels to the edge for display
+      const sourceNode = graphData.nodes.find(n => n.id === edge.source);
+      const targetNode = graphData.nodes.find(n => n.id === edge.target);
+      
+      const enrichedEdge = {
+        ...edge,
+        sourceLabel: sourceNode?.label || `Node ${edge.source}`,
+        targetLabel: targetNode?.label || `Node ${edge.target}`
+      };
+      
+      setActiveEdge(enrichedEdge);
+      setActiveNode(null);
       setShowSidebar(true);
     }
   };
@@ -49,6 +79,7 @@ function App() {
   const closeSidebar = () => {
     setShowSidebar(false);
     setActiveNode(null);
+    setActiveEdge(null);
   };
 
   // Reset to initial state
@@ -56,6 +87,7 @@ function App() {
     setIsGenerated(false);
     setGraphData(null);
     setActiveNode(null);
+    setActiveEdge(null);
     setShowSidebar(false);
   };
 
@@ -72,19 +104,24 @@ function App() {
         {/* Main content */}
         <main className="app-main">
           {!isGenerated ? (
-            <PromptInput onSubmit={handlePromptSubmit} isLoading={isLoading} />
+            <>
+              <PromptInput onSubmit={handlePromptSubmit} isLoading={isLoading} />
+              {error && <div className="error-message">{error}</div>}
+            </>
           ) : (
             <Graph
               graphData={graphData}
               onNodeClick={handleNodeClick}
+              onEdgeClick={handleEdgeClick}
               selectedNodeId={activeNode?.id}
             />
           )}
 
-          {/* Sidebar appears when a node is clicked */}
-          {showSidebar && activeNode && (
+          {/* Sidebar appears when a node or edge is clicked */}
+          {showSidebar && (activeNode || activeEdge) && (
             <Sidebar
               node={activeNode}
+              edge={activeEdge}
               onClose={closeSidebar}
             />
           )}

@@ -1,20 +1,20 @@
-import React, { useState, useEffect, useRef } from "react";
-import Node from "./Node";
-import {
-  calculateNodePositions,
-  createEdgesFromData,
-} from "../utils/graphLayout";
+import React, { useEffect, useRef, useState } from "react";
 import { fetchNodeExpansion } from "../api/llmService";
+import {
+  calculateNodePositions
+} from "../utils/graphLayout";
+import Node from "./Node";
 
 // Component for visualizing the knowledge graph
 // Renders nodes and edges with interactive capabilities
-const Graph = ({ graphData, onNodeClick, selectedNodeId }) => {
+const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
   const [expandedNodeId, setExpandedNodeId] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [clusters, setClusters] = useState([]);
   const [isExpanding, setIsExpanding] = useState(false);
   const [activeCluster, setActiveCluster] = useState(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState(null);
   const nodesRef = useRef(nodes);
 
   // Initialize graph with data from props
@@ -101,6 +101,17 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId }) => {
   // Handle node click - only notify parent, no auto-expansion
   const handleNodeClick = (node) => {
     onNodeClick(node);
+    setSelectedEdgeId(null); // Clear edge selection when clicking a node
+  };
+
+  // Handle edge click
+  const handleEdgeClick = (edge) => {
+    const edgeId = `${edge.source}-${edge.target}`;
+    setSelectedEdgeId(edgeId === selectedEdgeId ? null : edgeId);
+    
+    if (onEdgeClick && edge) {
+      onEdgeClick(edge);
+    }
   };
 
   // New handler for expand button click
@@ -187,52 +198,81 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId }) => {
         aria-label="Knowledge graph visualization"
       >
         <title>Interactive Knowledge Graph Visualization</title>
+        <defs>
+          {/* Define marker for directed edges */}
+          <marker
+            id="arrowhead"
+            viewBox="0 0 10 10"
+            refX="7"
+            refY="5"
+            markerWidth="8"
+            markerHeight="8"
+            orient="auto"
+          >
+            <polygon points="0,0 10,5 0,10" className="edge-arrow" />
+          </marker>
+        </defs>
+        
         {/* Render edges */}
-        {edges.map((edge, index) => {
-          const source = nodes.find((n) => n.id === edge.source);
-          const target = nodes.find((n) => n.id === edge.target);
-
-          if (!source || !target || !source.x || !target.x) return null;
-
-          return (
-            <g
-              key={`edge-${edge.source}-${edge.target}`}
-              className={`edge ${edge.type}`}
-            >
-              <line
-                x1={source.x}
-                y1={source.y}
-                x2={target.x}
-                y2={target.y}
-                className={`graph-edge ${
-                  edge.bidirectional ? "bidirectional" : ""
-                }`}
-                strokeWidth={edge.weight ? edge.weight * 3 : 1}
-              />
-              {/* Arrow marker for directed edges */}
-              {!edge.bidirectional && (
-                <polygon
-                  points="0,-3 6,0 0,3"
-                  className="edge-arrow"
-                  // transform={`translate(${target.x}, ${target.y}) rotate(${Math.atan2(target.y - source.y, target.x - source.x) * 180 / Math.PI}) translate(-10, 0)`}
-                />
-              )}
-              {/* Edge type label */}
-              {edge.type && (
-                <text
-                  x={(source.x + target.x) / 2}
-                  y={(source.y + target.y) / 2 - 5}
-                  textAnchor="middle"
-                  className="edge-label"
-                  fontSize="8"
+        <g className="edges">
+          {edges.map((edge) => {
+            const source = nodes.find(n => n.id === edge.source);
+            const target = nodes.find(n => n.id === edge.target);
+            
+            if (!source || !target) return null;
+            
+            // Use the same positioning logic as found elsewhere in the codebase
+            // The nodes are positioned with their top-left at (x,y) and have radius of 20px
+            const centerOffset = 20; // Node radius
+            const sourceX = (source.x || 0) + centerOffset;
+            const sourceY = (source.y || 0) + centerOffset;
+            const targetX = (target.x || 0) + centerOffset;
+            const targetY = (target.y || 0) + centerOffset;
+            
+            // Label position
+            const labelX = sourceX + (targetX - sourceX) * 0.5;
+            const labelY = sourceY + (targetY - sourceY) * 0.5 - 5;
+            
+            const isSelected = selectedEdgeId === `${edge.source}-${edge.target}`;
+            
+            return (
+              <g key={`edge-${edge.source}-${edge.target}`} className={`edge ${edge.type} ${isSelected ? 'selected' : ''}`}>
+                <line
+                  x1={sourceX}
+                  y1={sourceY}
+                  x2={targetX}
+                  y2={targetY}
+                  className={`graph-edge ${edge.bidirectional ? 'bidirectional' : ''} ${isSelected ? 'selected' : ''}`}
+                  onClick={() => handleEdgeClick(edge)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleEdgeClick(edge)}
+                  tabIndex="0"
+                  aria-label={`Edge from ${source.label} to ${target.label}${edge.type ? `: ${edge.type}` : ''}`}
+                  markerEnd={!edge.bidirectional ? "url(#arrowhead)" : null}
                 >
-                  {edge.type.replace(/_/g, " ")}
-                </text>
-              )}
-            </g>
-          );
-        })}
-
+                  {edge.description && <title>{edge.description}</title>}
+                </line>
+                
+                {/* Edge type label */}
+                {edge.type && (
+                  <g className="edge-label-container">
+                    <text
+                      x={labelX}
+                      y={labelY}
+                      textAnchor="middle"
+                      className={`edge-label ${isSelected ? 'selected' : ''}`}
+                      fontSize={isSelected ? "10" : "8"}
+                      fontWeight={isSelected ? "bold" : "normal"}
+                    >
+                      {edge.type.replace(/_/g, ' ')}
+                      {edge.description && <title>{edge.description}</title>}
+                    </text>
+                  </g>
+                )}
+              </g>
+            );
+          })}
+        </g>
+        
         {/* Render cluster labels */}
         {renderClusters()}
 
@@ -258,7 +298,11 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId }) => {
               className="expand-button"
               transform={`translate(${node.x + 20}, ${node.y - 20})`}
               onClick={(e) => handleExpandClick(node.id, e)}
-              style={{ cursor: "pointer" }}
+              onKeyPress={(e) => e.key === 'Enter' && handleExpandClick(node.id, e)}
+              tabIndex="0"
+              aria-label={`Expand node ${node.label}`}
+              role="button"
+              style={{ cursor: 'pointer' }}
             >
               <circle r="8" fill="#ffffff" stroke="#666666" strokeWidth="1" />
               <text textAnchor="middle" dy=".3em" fontSize="12" fill="#666666">
