@@ -394,3 +394,34 @@ button {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 } 
+
+/* star trail */
+.star-trail-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+  z-index: 1000;
+  overflow: visible;
+}
+
+.star {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  animation: star-fade 1s linear forwards;
+  color: var(--accent);
+}
+
+@keyframes star-fade {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0);
+  }
+}

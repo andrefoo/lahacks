@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import PromptInput from './components/PromptInput';
 import Graph from './components/Graph';
 import Sidebar from './components/Sidebar';
+import StarTrail from './components/StarTrail';
 import { fetchGraphData } from './api/llmService';
 
 // Main App component
@@ -17,7 +18,7 @@ function App() {
   // Handle prompt submission
   const handlePromptSubmit = async (prompt) => {
     if (!prompt.trim()) return;
-    
+
     setIsLoading(true);
     try {
       // Fetch graph data from LLM service
@@ -52,41 +53,44 @@ function App() {
   };
 
   return (
-    <div className="app-container">
-      {/* Header */}
-      <header className="app-header">
-        <h1>Constellation</h1>
-        {!isGenerated && <div className="subtitle">Knowledge Graph Bias Detection</div>}
-      </header>
+    <>
+      <StarTrail />
+      <div className="app-container">
+        {/* Header */}
+        <header className="app-header">
+          <h1>Constellation</h1>
+          {!isGenerated && <div className="subtitle">Knowledge Graph Bias Detection</div>}
+        </header>
 
-      {/* Main content */}
-      <main className="app-main">
-        {!isGenerated ? (
-          <PromptInput onSubmit={handlePromptSubmit} isLoading={isLoading} />
-        ) : (
-          <Graph 
-            graphData={graphData} 
-            onNodeClick={handleNodeClick} 
-          />
-        )}
-        
-        {/* Sidebar appears when a node is clicked */}
-        {showSidebar && activeNode && (
-          <Sidebar 
-            node={activeNode} 
-            onClose={closeSidebar} 
-          />
-        )}
-      </main>
+        {/* Main content */}
+        <main className="app-main">
+          {!isGenerated ? (
+            <PromptInput onSubmit={handlePromptSubmit} isLoading={isLoading} />
+          ) : (
+            <Graph
+              graphData={graphData}
+              onNodeClick={handleNodeClick}
+            />
+          )}
 
-      {/* Footer with controls */}
-      {isGenerated && (
-        <footer className="app-footer">
-          <button onClick={handleReset}>New Prompt</button>
-          <button>Highlight Biases</button>
-        </footer>
-      )}
-    </div>
+          {/* Sidebar appears when a node is clicked */}
+          {showSidebar && activeNode && (
+            <Sidebar
+              node={activeNode}
+              onClose={closeSidebar}
+            />
+          )}
+        </main>
+
+        {/* Footer with controls */}
+        {isGenerated && (
+          <footer className="app-footer">
+            <button onClick={handleReset}>New Prompt</button>
+            <button>Highlight Biases</button>
+          </footer>
+        )}
+      </div>
+    </>
   );
 }
 
