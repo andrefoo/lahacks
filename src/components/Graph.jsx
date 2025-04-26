@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Node from './Node';
 import { calculateNodePositions, createEdges } from '../utils/graphLayout';
+import { fetchNodeChildren } from '../api/llmService';
 
 // Component for visualizing the knowledge graph
 // Renders nodes and edges with interactive capabilities
@@ -8,6 +9,7 @@ const Graph = ({ graphData, onNodeClick }) => {
   const [expandedNodeId, setExpandedNodeId] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
+  const [isExpanding, setIsExpanding] = useState(false);
 
   // Initialize graph with data from props
   useEffect(() => {
@@ -28,25 +30,55 @@ const Graph = ({ graphData, onNodeClick }) => {
   }, [nodes, expandedNodeId]);
 
   // Handle node expansion
-  const handleNodeExpand = (nodeId) => {
+  const handleNodeExpand = async (nodeId) => {
+    // Set the expanded node ID immediately for UI feedback
     setExpandedNodeId(nodeId);
     
-    // Get child nodes from the graph data
-    if (graphData.childNodesMap && graphData.childNodesMap[nodeId]) {
-      const childNodes = graphData.childNodesMap[nodeId];
+    // Check if node is already expanded or is being expanded
+    const nodeIsExpanded = nodes.some(n => n.parentId === nodeId);
+    if (nodeIsExpanded || isExpanding) {
+      return;
+    }
+    
+    setIsExpanding(true);
+    
+    try {
+      // Fetch child nodes from API
+      const result = await fetchNodeChildren(nodeId);
       
-      // Add child nodes to the graph if they aren't already present
-      setNodes(prevNodes => {
-        const existingNodeIds = new Set(prevNodes.map(n => n.id));
-        const newChildNodes = childNodes.filter(child => !existingNodeIds.has(child.id));
-        
-        // Update the parent node to show it's expanded
-        const updatedNodes = prevNodes.map(node => 
-          node.id === nodeId ? { ...node, expanded: true } : node
-        );
-        
-        return [...updatedNodes, ...newChildNodes];
-      });
+      if (result && result.childNodes) {
+        // Add child nodes to the graph
+        setNodes(prevNodes => {
+          // Update the parent node to show it's expanded
+          const updatedNodes = prevNodes.map(node => 
+            node.id === nodeId ? { ...node, expanded: true } : node
+          );
+          
+          // Add the child nodes
+          return [...updatedNodes, ...result.childNodes.map(child => ({
+            ...child,
+            parentId: nodeId
+          }))];
+        });
+      }
+    } catch (error) {
+      console.error('Error expanding node:', error);
+      // If the graph data has child nodes for this node, use them as fallback
+      if (graphData && graphData.childNodesMap && graphData.childNodesMap[nodeId]) {
+        const childNodes = graphData.childNodesMap[nodeId];
+        setNodes(prevNodes => {
+          const updatedNodes = prevNodes.map(node => 
+            node.id === nodeId ? { ...node, expanded: true } : node
+          );
+          
+          return [...updatedNodes, ...childNodes.map(child => ({
+            ...child,
+            parentId: nodeId
+          }))];
+        });
+      }
+    } finally {
+      setIsExpanding(false);
     }
   };
 
@@ -78,6 +110,7 @@ const Graph = ({ graphData, onNodeClick }) => {
             node={node}
             onClick={() => handleNodeClick(node)}
             isExpanded={node.id === expandedNodeId}
+            isLoading={isExpanding && node.id === expandedNodeId}
           />
         ))}
       </svg>

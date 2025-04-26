@@ -34,7 +34,8 @@ const childNodesMap = {
 
 /**
  * Fetch graph data from the LLM API based on user prompt
- * In a real implementation, this would call an external API
+ * @param {string} prompt - User's input prompt
+ * @returns {Object} - Knowledge graph data with nodes and childNodesMap
  */
 export const fetchGraphData = async (prompt) => {
   try {
@@ -43,7 +44,7 @@ export const fetchGraphData = async (prompt) => {
     const endpoint = '/api/generate-graph';
     
     // If we're in development mode or don't have actual API yet, use mock data
-    if (process.env.NODE_ENV === 'development' || !endpoint) {
+    if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' && !window.forceApiCall) {
       await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
       
       // For testing, use the hardcoded data
@@ -83,5 +84,94 @@ export const fetchGraphData = async (prompt) => {
       nodes: initialNodes,
       childNodesMap: childNodesMap
     };
+  }
+};
+
+/**
+ * Fetch child nodes for a specific parent node
+ * @param {number} nodeId - ID of the parent node
+ * @param {number} limit - Maximum number of children to return
+ * @returns {Object} - Object containing parentId and childNodes array
+ */
+export const fetchNodeChildren = async (nodeId, limit = 3) => {
+  try {
+    // In a real implementation, call the server endpoint
+    const endpoint = `/api/expand-node/${nodeId}?limit=${limit}`;
+    
+    // If we're in development mode, use mock data if available
+    if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' && !window.forceApiCall) {
+      await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
+      
+      // Return hardcoded children if available
+      if (childNodesMap[nodeId]) {
+        return {
+          parentId: nodeId,
+          childNodes: childNodesMap[nodeId].slice(0, limit)
+        };
+      }
+      
+      // Generate mock children for testing
+      const childNodes = Array.from({ length: limit }, (_, i) => ({
+        id: nodeId * 100 + i + 1,
+        label: `Child Node ${i + 1}`,
+        description: `This is a mock child node for parent ${nodeId}.`
+      }));
+      
+      return {
+        parentId: nodeId,
+        childNodes
+      };
+    }
+    
+    // Make the actual API call
+    const response = await fetch(endpoint);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to expand node ${nodeId}`);
+    }
+    
+    const data = await response.json();
+    
+    // Process child nodes to detect biases
+    if (data.childNodes && Array.isArray(data.childNodes)) {
+      data.childNodes = detectBiases(data.childNodes);
+    }
+    
+    return data;
+  } catch (error) {
+    console.error(`Error fetching children for node ${nodeId}:`, error);
+    
+    // Return fallback children
+    const fallbackChildren = childNodesMap[nodeId] || 
+      Array.from({ length: limit }, (_, i) => ({
+        id: nodeId * 100 + i + 1,
+        label: `Child Node ${i + 1}`,
+        description: `Fallback child node for parent ${nodeId}.`
+      }));
+    
+    return {
+      parentId: nodeId,
+      childNodes: fallbackChildren.slice(0, limit)
+    };
+  }
+};
+
+/**
+ * Check if the API server is healthy
+ * @returns {boolean} - Whether the API server is available
+ */
+export const checkApiHealth = async () => {
+  try {
+    const response = await fetch('/api/health');
+    
+    if (!response.ok) {
+      return false;
+    }
+    
+    const data = await response.json();
+    return data.status === 'ok';
+  } catch (error) {
+    console.error('API health check failed:', error);
+    return false;
   }
 }; 

@@ -292,4 +292,31 @@ button {
   0% { opacity: 1; }
   50% { opacity: 0.7; }
   100% { opacity: 1; }
+}
+
+/* Loading indicator styles */
+.node-circle.loading {
+  stroke-dasharray: 3;
+  animation: pulse 1s infinite, rotate 2s linear infinite;
+}
+
+.loading-indicator {
+  color: white;
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Animation for spin */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 } 
