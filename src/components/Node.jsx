@@ -1,9 +1,9 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Loader2 } from 'lucide-react';
 
 // Component for individual nodes in the knowledge graph
 // Renders a circle with text and indicates if the node has bias
-const Node = ({ node, onClick, isExpanded }) => {
+const Node = ({ node, onClick, isExpanded, isLoading }) => {
   // Determine node size based on whether it's a child node
   const isChild = node.parentId !== undefined;
   const nodeSize = isChild ? 40 : 60;
@@ -24,7 +24,7 @@ const Node = ({ node, onClick, isExpanded }) => {
         cx={nodeSize/2}
         cy={nodeSize/2}
         r={nodeSize/2}
-        className={`node-circle ${node.hasBias ? 'has-bias' : ''}`}
+        className={`node-circle ${node.hasBias ? 'has-bias' : ''} ${isLoading ? 'loading' : ''}`}
       />
       
       {/* Node label */}
@@ -38,6 +38,13 @@ const Node = ({ node, onClick, isExpanded }) => {
       >
         {displayLabel}
       </text>
+      
+      {/* Loading indicator - shown when expanding node */}
+      {isLoading && (
+        <g transform={`translate(${nodeSize/2 - 10}, ${nodeSize/2 - 10})`} className="loading-indicator">
+          <Loader2 size={20} className="animate-spin" />
+        </g>
+      )}
       
       {/* Bias indicator - only shown if node has bias */}
       {node.hasBias && (

@@ -133,4 +133,148 @@ exports.generateGraph = async (req, res) => {
       childNodesMap: childNodesMap
     });
   }
-}; 
+};
+
+/**
+ * Expand a specific node to get its child nodes
+ * @param {Object} req - Express request object with nodeId parameter
+ * @param {Object} res - Express response object
+ */
+exports.expandNode = async (req, res) => {
+  try {
+    const { nodeId } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit) : 3;
+    
+    // Validate nodeId
+    const id = parseInt(nodeId);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid node ID' });
+    }
+
+    // Check if we already have children for this node in our fallback data
+    if (childNodesMap[id]) {
+      return res.json({
+        parentId: id,
+        childNodes: childNodesMap[id].slice(0, limit)
+      });
+    }
+    
+    // Check for API key
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      console.warn('No OpenAI API key found. Using generated child nodes.');
+      
+      // Generate fallback children
+      const childNodes = generateFallbackChildren(id, limit);
+      return res.json({
+        parentId: id,
+        childNodes
+      });
+    }
+    
+    // Find the parent node to use its label as context
+    const parentNode = initialNodes.find(node => node.id === id);
+    if (!parentNode) {
+      return res.status(404).json({ error: 'Node not found' });
+    }
+    
+    // Create system prompt for the LLM to generate child nodes
+    const systemPrompt = `
+      You are an AI specialized in generating subtopics for knowledge graphs.
+      Generate ${limit} child nodes/subtopics for the concept: "${parentNode.label}".
+      Each child node should have a descriptive label (1-5 words) and a brief description (1-2 sentences).
+      
+      Format your response as a valid JSON array with the following structure:
+      [
+        { "id": ${id * 100 + 1}, "label": "Child Concept 1", "description": "Description of child concept 1" },
+        { "id": ${id * 100 + 2}, "label": "Child Concept 2", "description": "Description of child concept 2" },
+        ...
+      ]
+    `;
+    
+    // Call OpenAI API
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-3.5-turbo', 
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Generate subtopics for "${parentNode.label}"` }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    // Parse the LLM response
+    const content = response.data.choices[0].message.content.trim();
+    let childNodes;
+    
+    try {
+      // Extract JSON from the response (in case there's additional text)
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      const jsonString = jsonMatch ? jsonMatch[0] : content;
+      childNodes = JSON.parse(jsonString);
+      
+      // Validate the structure
+      if (!Array.isArray(childNodes) || childNodes.length === 0) {
+        throw new Error('Invalid response structure');
+      }
+    } catch (parseError) {
+      console.error('Error parsing LLM response:', parseError);
+      // Use fallback data on parsing error
+      childNodes = generateFallbackChildren(id, limit);
+    }
+    
+    // Return the child nodes
+    res.json({
+      parentId: id,
+      childNodes
+    });
+    
+  } catch (error) {
+    console.error('Error expanding node:', error);
+    
+    // Generate fallback children on error
+    const id = parseInt(req.params.nodeId);
+    const limit = req.query.limit ? parseInt(req.query.limit) : 3;
+    
+    res.json({
+      parentId: id,
+      childNodes: generateFallbackChildren(id, limit)
+    });
+  }
+};
+
+/**
+ * Generate fallback child nodes for a parent ID
+ * @param {number} parentId - Parent node ID
+ * @param {number} limit - Number of children to generate
+ * @returns {Array} - Array of child nodes
+ */
+function generateFallbackChildren(parentId, limit = 3) {
+  const baseChildId = parentId * 100;
+  const nodeTopics = [
+    { label: "Implementation Challenges", description: "Obstacles and difficulties faced during practical application and deployment." },
+    { label: "Future Developments", description: "Anticipated advancements and innovations expected in coming years." },
+    { label: "Cost Analysis", description: "Examination of economic factors, expenses, and financial implications." },
+    { label: "Regulatory Aspects", description: "Legal frameworks, policies, and compliance requirements." },
+    { label: "Case Studies", description: "Examination of real-world examples and their outcomes." },
+    { label: "Technical Specifications", description: "Detailed technical requirements and parameters." }
+  ];
+  
+  return Array.from({ length: limit }, (_, index) => {
+    const topicIndex = (parentId + index) % nodeTopics.length;
+    return {
+      id: baseChildId + index + 1,
+      label: nodeTopics[topicIndex].label,
+      description: nodeTopics[topicIndex].description
+    };
+  });
+} 

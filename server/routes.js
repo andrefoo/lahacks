@@ -4,12 +4,18 @@ const llmController = require('./llmController');
 
 const router = express.Router();
 
-// Route for generating knowledge graph from prompt
+// Main endpoint for generating knowledge graph from prompt
 router.post('/generate-graph', llmController.generateGraph);
 
-// Health check route
+// Endpoint for expanding a specific node
+router.get('/expand-node/:nodeId', llmController.expandNode);
+
+// Health check endpoint
 router.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok' });
+  res.status(200).json({
+    status: 'ok',
+    version: '1.0.0'
+  });
 });
 
 module.exports = router; 
