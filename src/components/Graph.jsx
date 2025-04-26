@@ -57,19 +57,19 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
   const handleNodeExpand = async (nodeId) => {
     // Set the expanded node ID immediately for UI feedback
     setExpandedNodeId(nodeId);
-
+    
     // Check if node is already expanded or is being expanded
     const nodeIsExpanded = nodes.some((n) => n.parentId === nodeId);
     if (nodeIsExpanded || isExpanding) {
       return;
     }
-
+    
     setIsExpanding(true);
-
+    
     try {
       // Fetch node expansion data from API
       const expansion = await fetchNodeExpansion(nodeId);
-
+      
       if (expansion?.nodes?.length) {
         // Add expanded nodes to the graph
         setNodes((prevNodes) => {
@@ -77,18 +77,37 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
             node.id === nodeId ? { ...node, expanded: true } : node
           );
           const existingIds = new Set(prevNodes.map((n) => n.id));
+          
+          // Ensure all new nodes have valid labels
           const newNodes = expansion.nodes
             .filter((node) => !existingIds.has(node.id))
             .map((node) => ({
               ...node,
               parentId: node.parentId ?? nodeId,
+              // Ensure each node has a label
+              label: node.label || `Node ${node.id}`
             }));
+            
           return [...updatedNodes, ...newNodes];
         });
-
-        // Add new edges to the graph
+        
+        // Add new edges to the graph with enhanced information
         setEdges((prevEdges) => {
-          return [...prevEdges, ...expansion.edges];
+          // Ensure all new edges have proper descriptive properties
+          const enhancedEdges = expansion.edges.map(edge => {
+            // Find source and target nodes to get their labels
+            const sourceNode = [...nodes, ...expansion.nodes].find(n => n.id === edge.source);
+            const targetNode = [...nodes, ...expansion.nodes].find(n => n.id === edge.target);
+            
+            return {
+              ...edge,
+              // Add source and target labels to the edge for better UI display
+              sourceLabel: sourceNode?.label || `Node ${edge.source}`,
+              targetLabel: targetNode?.label || `Node ${edge.target}`
+            };
+          });
+          
+          return [...prevEdges, ...enhancedEdges];
         });
       }
     } catch (error) {
@@ -221,6 +240,10 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
             
             if (!source || !target) return null;
             
+            // Ensure source and target have valid labels
+            const sourceLabel = source.label || `Node ${source.id}`;
+            const targetLabel = target.label || `Node ${target.id}`;
+            
             // Use the same positioning logic as found elsewhere in the codebase
             // The nodes are positioned with their top-left at (x,y) and have radius of 20px
             const centerOffset = 20; // Node radius
@@ -243,9 +266,16 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
             
             const isSelected = selectedEdgeId === `${edge.source}-${edge.target}`;
             
+            // Create an enriched edge with source and target labels for the click handler
+            const enrichedEdge = {
+              ...edge,
+              sourceLabel,
+              targetLabel
+            };
+            
             // Common click handler for all edge elements
-            const handleEdgeElementClick = () => handleEdgeClick(edge);
-            const handleEdgeKeyPress = (e) => e.key === "Enter" && handleEdgeClick(edge);
+            const handleEdgeElementClick = () => handleEdgeClick(enrichedEdge);
+            const handleEdgeKeyPress = (e) => e.key === "Enter" && handleEdgeClick(enrichedEdge);
             
             return (
               <g key={`edge-${edge.source}-${edge.target}`} className={`edge ${edge.type} ${isSelected ? "selected" : ""}`}>
@@ -261,7 +291,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                       onClick={handleEdgeElementClick}
                       onKeyPress={handleEdgeKeyPress}
                       tabIndex="0"
-                      aria-label={`First half of edge from ${source.label} to ${target.label}`}
+                      aria-label={`First half of edge from ${sourceLabel} to ${targetLabel}`}
                     />
                     
                     {/* Second half of the line (from midpoint to target), with arrow */}
@@ -274,7 +304,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                       onClick={handleEdgeElementClick}
                       onKeyPress={handleEdgeKeyPress}
                       tabIndex="0"
-                      aria-label={`Second half of edge from ${source.label} to ${target.label}`}
+                      aria-label={`Second half of edge from ${sourceLabel} to ${targetLabel}`}
                       markerStart="url(#arrowhead)"
                     />
                   </>
@@ -289,7 +319,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                     onClick={handleEdgeElementClick}
                     onKeyPress={handleEdgeKeyPress}
                     tabIndex="0"
-                    aria-label={`Bidirectional edge between ${source.label} and ${target.label}`}
+                    aria-label={`Bidirectional edge between ${sourceLabel} and ${targetLabel}`}
                   />
                 )}
                 
@@ -301,7 +331,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                     onKeyPress={handleEdgeKeyPress}
                     tabIndex="0"
                     role="button"
-                    aria-label={`Relationship ${edge.type} between ${source.label} and ${target.label}`}
+                    aria-label={`Relationship ${edge.type} between ${sourceLabel} and ${targetLabel}`}
                     style={{ cursor: "pointer" }}
                   >
                     {/* Invisible larger hitbox for better clickability */}

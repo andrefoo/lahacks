@@ -59,16 +59,20 @@ function App() {
       setActiveEdge(null);
       setShowSidebar(false);
     } else {
-      // Select the new edge and clear any active node
-      // Add source and target node labels to the edge for display
-      const sourceNode = graphData.nodes.find(n => n.id === edge.source);
-      const targetNode = graphData.nodes.find(n => n.id === edge.target);
+      // Use the sourceLabel and targetLabel from the enriched edge if available
+      // Otherwise, find the nodes and create the labels
+      let enrichedEdge = { ...edge };
       
-      const enrichedEdge = {
-        ...edge,
-        sourceLabel: sourceNode?.label || `Node ${edge.source}`,
-        targetLabel: targetNode?.label || `Node ${edge.target}`
-      };
+      if (!edge.sourceLabel || !edge.targetLabel) {
+        const sourceNode = graphData?.nodes?.find(n => n.id === edge.source);
+        const targetNode = graphData?.nodes?.find(n => n.id === edge.target);
+        
+        enrichedEdge = {
+          ...edge,
+          sourceLabel: edge.sourceLabel || sourceNode?.label || `Node ${edge.source}`,
+          targetLabel: edge.targetLabel || targetNode?.label || `Node ${edge.target}`
+        };
+      }
       
       setActiveEdge(enrichedEdge);
       setActiveNode(null);
