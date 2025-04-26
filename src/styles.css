@@ -1,3 +1,22 @@
+@import url('https://fonts.googleapis.com/css2?family=Karla:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&display=swap');
+
+@font-face {
+  font-family: 'Agrandir Tight';
+  src: url('./fonts/agrandir-tight.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+:root {
+  --primary: #152a32;
+  --secondary: #f8f4eb;
+  --text: #152a32;
+  --accent: #c9b5ff;
+  --dark-gray: #334155;
+}
+
+
 /* Base styles */
 * {
   box-sizing: border-box;
@@ -5,11 +24,21 @@
   padding: 0;
 }
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+body, p {
+  font-family: 'Fira Code', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
     Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: #0f172a;
-  color: #f8fafc;
+  background-color: var(--primary);
+  color: var(--secondary);
+}
+
+button,
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Agrandir Tight', 'Fira Code', sans-serif;
+}
+
+.cluster-text {
+  font-family: 'Agrandir Tight', 'Fira Code', sans-serif;
+  color: var(--secondary);
 }
 
 button {
@@ -32,6 +61,7 @@ button {
   justify-content: space-between;
   padding: 1rem;
   border-bottom: 1px solid #334155;
+  flex: 0 0 auto;
 }
 
 .app-header h1 {
@@ -39,16 +69,20 @@ button {
   font-weight: bold;
 }
 
-.subtitle {
+.subtitle .edge-label {
+  font-family: 'Agrandir Tight', 'Fira Code', sans-serif;
   font-size: 0.875rem;
-  color: #94a3b8;
+  color: var(--secondary);
 }
 
 /* Main Content */
 .app-main {
-  flex: 1;
-  position: relative;
-  overflow: hidden;
+  flex: 1 1 auto;
+  min-height: 0; /* Important for flex children! */
+  display: flex;
+  flex-direction: row; /* Or column, depending on your layout */
+  justify-content: center;
+  align-items: center;
 }
 
 /* Footer */
@@ -61,14 +95,14 @@ button {
 
 .app-footer button {
   padding: 0.5rem 1rem;
-  background-color: #1e293b;
+  background-color: var(--primary);
   border-radius: 0.5rem;
-  color: white;
+  color: var(--secondary);
   transition: background-color 0.2s;
 }
 
 .app-footer button:hover {
-  background-color: #334155;
+  background-color: var(--accent);
 }
 
 /* Prompt Input */
@@ -141,12 +175,15 @@ button {
 
 /* Graph */
 .graph-container {
-  width: 100%;
-  height: 100%;
+  width: 100vw;
+  height: 100vh;
 }
 
 .graph-svg {
-  background-color: #0f172a;
+  background-color: primary;
+  width: 100%;
+  height: 100%;
+  /* display: block; */
 }
 
 .graph-edge {
@@ -161,7 +198,7 @@ button {
 }
 
 .graph-node:hover {
-  transform: scale(1.05);
+  /* transform: scale(1.05); */
 }
 
 .node-circle {
@@ -187,6 +224,21 @@ button {
   fill: #3b82f6;
 }
 
+/* Hide expand button by default */
+.expand-button {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+/* Show expand button when hovering over the node group */
+.graph-node:hover + .expand-button,
+.graph-node:focus + .expand-button,
+.expand-button:hover {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .bias-indicator {
   pointer-events: none;
 }
@@ -206,9 +258,9 @@ button {
   right: 0;
   width: 20rem;
   height: 100%;
-  background-color: #1e293b;
+  background-color: var(--primary);
   padding: 1.5rem;
-  border-left: 1px solid #334155;
+  border-left: 1px solid var(--dark-gray);
   overflow-y: auto;
   animation: slide-in 0.3s ease-out;
 }
@@ -249,6 +301,7 @@ button {
 .section-text {
   font-size: 0.875rem;
   line-height: 1.5;
+  background-color: transparent;
 }
 
 .bias-section {
@@ -280,6 +333,7 @@ button {
 .bias-description {
   font-size: 0.75rem;
   color: #e5e5e5;
+  background-color: transparent;
 }
 
 /* Animations */

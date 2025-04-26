@@ -48,7 +48,7 @@ const Graph = ({ graphData, onNodeClick }) => {
         setNodes(positionedNodes);
       }
     }
-  }, [expandedNodeId, clusters, activeCluster]);
+  }, [nodes, expandedNodeId, clusters, activeCluster]);
 
   // Handle node expansion
   const handleNodeExpand = async (nodeId) => {
@@ -70,17 +70,16 @@ const Graph = ({ graphData, onNodeClick }) => {
       if (expansion?.nodes?.length) {
         // Add expanded nodes to the graph
         setNodes(prevNodes => {
-          // Update the parent node to show it's expanded
           const updatedNodes = prevNodes.map(node => 
             node.id === nodeId ? { ...node, expanded: true } : node
           );
-          
-          // Mark expanded nodes with parentId
-          const newNodes = expansion.nodes.map(node => ({
-            ...node,
-            parentId: nodeId
-          }));
-          
+          const existingIds = new Set(prevNodes.map(n => n.id));
+          const newNodes = expansion.nodes
+            .filter(node => !existingIds.has(node.id))
+            .map(node => ({
+              ...node,
+              parentId: node.parentId ?? nodeId
+            }));
           return [...updatedNodes, ...newNodes];
         });
         
@@ -96,10 +95,16 @@ const Graph = ({ graphData, onNodeClick }) => {
     }
   };
 
-  // Handle node click - both expand and notify parent
+  // Handle node click - only notify parent, no auto-expansion
   const handleNodeClick = (node) => {
-    handleNodeExpand(node.id);
     onNodeClick(node);
+  };
+
+  // New handler for expand button click
+  const handleExpandClick = (nodeId, event) => {
+    // Prevent the click from triggering the node click handler
+    event.stopPropagation();
+    handleNodeExpand(nodeId);
   };
   
   // Handle cluster activation
@@ -129,7 +134,7 @@ const Graph = ({ graphData, onNodeClick }) => {
         <g 
           key={`cluster-${cluster.id}`} 
           className={`cluster-label ${activeCluster === cluster.id ? 'active' : ''}`}
-          transform={`translate(${centerX}, ${centerY - 40})`}
+          // transform={`translate(${centerX}, ${centerY - 40})`}
           onClick={() => handleClusterClick(cluster.id)}
           onKeyPress={(e) => handleClusterKeyPress(e, cluster.id)}
           tabIndex="0"
@@ -191,7 +196,7 @@ const Graph = ({ graphData, onNodeClick }) => {
                 <polygon 
                   points="0,-3 6,0 0,3" 
                   className="edge-arrow"
-                  transform={`translate(${target.x}, ${target.y}) rotate(${Math.atan2(target.y - source.y, target.x - source.x) * 180 / Math.PI}) translate(-10, 0)`}
+                  // transform={`translate(${target.x}, ${target.y}) rotate(${Math.atan2(target.y - source.y, target.x - source.x) * 180 / Math.PI}) translate(-10, 0)`}
                 />
               )}
               {/* Edge type label */}
@@ -213,16 +218,39 @@ const Graph = ({ graphData, onNodeClick }) => {
         {/* Render cluster labels */}
         {renderClusters()}
         
-        {/* Render nodes */}
+        {/* Modified node rendering */}
         {nodes.map(node => (
-          <Node
-            key={`node-${node.id}`}
-            node={node}
-            onClick={handleNodeClick}
-            isExpanded={node.id === expandedNodeId}
-            isLoading={isExpanding && node.id === expandedNodeId}
-            isInActiveCluster={activeCluster ? clusters.find(c => c.id === activeCluster)?.nodes.includes(node.id) : false}
-          />
+          <g key={`node-${node.id}`}>
+            <Node
+              node={node}
+              onClick={handleNodeClick}
+              isExpanded={node.id === expandedNodeId}
+              isLoading={isExpanding && node.id === expandedNodeId}
+              isInActiveCluster={activeCluster ? clusters.find(c => c.id === activeCluster)?.nodes.includes(node.id) : false}
+            />
+            {/* expand button */}
+            <g
+              className="expand-button"
+              transform={`translate(${node.x + 20}, ${node.y - 20})`}
+              onClick={(e) => handleExpandClick(node.id, e)}
+              style={{ cursor: 'pointer' }}
+            >
+              <circle
+                r="8"
+                fill="#ffffff"
+                stroke="#666666"
+                strokeWidth="1"
+              />
+              <text
+                textAnchor="middle"
+                dy=".3em"
+                fontSize="12"
+                fill="#666666"
+              >
+                +
+              </text>
+            </g>
+          </g>
         ))}
       </svg>
     </div>
