@@ -1,57 +1,142 @@
 import React from 'react';
-import { AlertTriangle, Loader2 } from 'lucide-react';
+import BiasIndicator from './BiasIndicator';
 
-// Component for individual nodes in the knowledge graph
-// Renders a circle with text and indicates if the node has bias
-const Node = ({ node, onClick, isExpanded, isLoading }) => {
-  // Determine node size based on whether it's a child node
-  const isChild = node.parentId !== undefined;
-  const nodeSize = isChild ? 40 : 60;
+// Component for rendering a single node in the knowledge graph
+const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster }) => {
+  // Default dimensions
+  const radius = node.parentId ? 18 : 25; // Child nodes are slightly smaller
   
-  // Truncate long labels
-  const displayLabel = node.label.length > 15 
-    ? node.label.substring(0, 15) + "..." 
-    : node.label;
+  // Different colors based on node type
+  const getNodeColor = () => {
+    const typeColors = {
+      concept: '#4285F4',     // Blue
+      entity: '#34A853',      // Green
+      process: '#FBBC05',     // Yellow
+      property: '#EA4335',    // Red
+      technology: '#9C27B0',  // Purple
+      question: '#FF9800'     // Orange
+    };
+    
+    return typeColors[node.type] || '#888888'; // Gray fallback
+  };
+  
+  // Calculate importance radius adjustment
+  const importanceRadius = () => {
+    const importance = node.properties?.importance || 0.5;
+    return radius * (0.8 + (importance * 0.4)); // Scale radius by importance
+  };
+  
+  const nodeRadius = importanceRadius();
+  
+  const handleKeyPress = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      onClick(node);
+    }
+  };
   
   return (
-    <g 
-      className={`graph-node ${isExpanded ? 'expanded' : ''}`}
-      transform={`translate(${node.x - nodeSize/2}, ${node.y - nodeSize/2})`}
-      onClick={onClick}
+    <g
+      className={`graph-node ${node.type || ''} ${isExpanded ? 'expanded' : ''} ${isInActiveCluster ? 'active-cluster' : ''}`}
+      transform={`translate(${node.x || 0}, ${node.y || 0})`}
+      onClick={() => onClick(node)}
+      onKeyPress={handleKeyPress}
+      style={{ cursor: 'pointer' }}
+      data-node-id={node.id}
+      tabIndex="0"
+      aria-expanded={isExpanded ? 'true' : 'false'}
+      aria-label={`Node: ${node.label} (${node.type || 'unknown type'})`}
     >
+      <foreignObject width="1" height="1" style={{ overflow: 'visible' }}>
+        <button
+          style={{ 
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            width: '1px',
+            height: '1px',
+            position: 'absolute',
+            opacity: 0,
+            pointerEvents: 'none'
+          }}
+          aria-expanded={isExpanded ? 'true' : 'false'}
+          aria-label={`Node: ${node.label} (${node.type || 'unknown type'})`}
+        />
+      </foreignObject>
+      
       {/* Node circle */}
       <circle
-        cx={nodeSize/2}
-        cy={nodeSize/2}
-        r={nodeSize/2}
-        className={`node-circle ${node.hasBias ? 'has-bias' : ''} ${isLoading ? 'loading' : ''}`}
+        r={nodeRadius}
+        fill={getNodeColor()}
+        strokeWidth={isExpanded ? 3 : 1.5}
+        className="node-circle"
       />
+      
+      {/* Show loading indicator */}
+      {isLoading && (
+        <circle
+          r={nodeRadius + 5}
+          className="loading-indicator"
+          strokeDasharray="10 5"
+          fill="none"
+          stroke="#666"
+          strokeWidth="2"
+        />
+      )}
+      
+      {/* Show expanded indicator */}
+      {isExpanded && !isLoading && (
+        <circle
+          r={nodeRadius + 4}
+          className="expanded-indicator"
+          fill="none"
+          stroke="#444"
+          strokeWidth="1.5"
+          strokeDasharray="2 2"
+        />
+      )}
       
       {/* Node label */}
       <text
-        x={nodeSize/2}
-        y={nodeSize/2}
         textAnchor="middle"
-        dominantBaseline="middle"
+        dy=".3em"
+        fontSize={node.parentId ? 8 : 10}
+        fontWeight="bold"
+        fill="#fff"
         className="node-label"
-        fontSize={isChild ? 10 : 12}
       >
-        {displayLabel}
+        {node.label.length > 20 ? `${node.label.substring(0, 18)}...` : node.label}
       </text>
       
-      {/* Loading indicator - shown when expanding node */}
-      {isLoading && (
-        <g transform={`translate(${nodeSize/2 - 10}, ${nodeSize/2 - 10})`} className="loading-indicator">
-          <Loader2 size={20} className="animate-spin" />
-        </g>
+      {/* Node type indicator */}
+      <text
+        textAnchor="middle"
+        dy={nodeRadius + 15}
+        fontSize="8"
+        className="node-type-label"
+      >
+        {node.type || 'node'}
+      </text>
+      
+      {/* Bias indicator if present */}
+      {node.hasBias && (
+        <BiasIndicator
+          biasType={node.biasType}
+          x={-nodeRadius - 5}
+          y={-nodeRadius - 5}
+        />
       )}
       
-      {/* Bias indicator - only shown if node has bias */}
-      {node.hasBias && (
-        <g transform={`translate(${nodeSize - 16}, ${nodeSize - 16})`} className="bias-indicator">
-          <circle cx="8" cy="8" r="8" className="bias-circle" />
-          <AlertTriangle size={10} className="bias-icon" />
-        </g>
+      {/* Domain badge if available */}
+      {node.properties?.domain && (
+        <text
+          textAnchor="start"
+          x={nodeRadius + 5}
+          y="5"
+          fontSize="7"
+          className="domain-badge"
+        >
+          {node.properties.domain}
+        </text>
       )}
     </g>
   );

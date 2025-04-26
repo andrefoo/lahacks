@@ -5,34 +5,49 @@
  * Calculate positions for nodes in a circle layout
  * Parent nodes are in a circle, child nodes are positioned around their parents
  */
-export const calculateNodePositions = (nodes, expandedNodeId = null) => {
+export const calculateNodePositions = (nodes, expandedNodeId = null, clusters = [], activeCluster = null) => {
   // Define center and radius for the main circle of nodes
   const centerX = window.innerWidth / 2;
   const centerY = window.innerHeight / 2.5;
   const radius = Math.min(window.innerWidth, window.innerHeight) * 0.3;
   
   // Get parent nodes (those with ids <= 10 in our simplified example)
-  const parentNodes = nodes.filter(node => node.id <= 10);
+  const parentNodes = nodes.filter(node => !node.parentId);
   
   return nodes.map(node => {
     // For parent nodes, arrange in a circle
-    if (node.id <= 10) {
+    if (!node.parentId) {
       const index = parentNodes.findIndex(n => n.id === node.id);
       const angle = (2 * Math.PI * index) / parentNodes.length;
       const x = centerX + radius * Math.cos(angle);
       const y = centerY + radius * Math.sin(angle);
       
+      // If a cluster is active, move nodes in that cluster more to the center
+      if (activeCluster) {
+        const nodeCluster = clusters.find(c => c.nodes.includes(node.id));
+        const isInActiveCluster = nodeCluster && nodeCluster.id === activeCluster;
+        
+        if (isInActiveCluster) {
+          // Move active cluster nodes 20% closer to center
+          return { 
+            ...node, 
+            x: centerX + (radius * 0.8) * Math.cos(angle), 
+            y: centerY + (radius * 0.8) * Math.sin(angle) 
+          };
+        }
+      }
+      
       return { ...node, x, y };
     } 
     // For child nodes, position them around their parent
     else {
-      const parentId = Math.floor(node.id / 100);
+      const parentId = node.parentId;
       const parent = nodes.find(n => n.id === parentId);
       
       if (parent) {
         // Find siblings (nodes with the same parent)
         const siblings = nodes.filter(n => 
-          n.id !== node.id && Math.floor(n.id / 100) === parentId
+          n.id !== node.id && n.parentId === parentId
         );
         
         // Find this node's index among siblings
@@ -46,15 +61,40 @@ export const calculateNodePositions = (nodes, expandedNodeId = null) => {
         
         // Position around parent with some distance
         const childRadius = 80;
-        const x = parent.x + childRadius * Math.cos(angleOffset);
-        const y = parent.y + childRadius * Math.sin(angleOffset);
+        const x = (parent.x || centerX) + childRadius * Math.cos(angleOffset);
+        const y = (parent.y || centerY) + childRadius * Math.sin(angleOffset);
         
-        return { ...node, x, y, parentId };
+        return { ...node, x, y };
       }
       
       // Fallback if parent not found
       return { ...node, x: centerX, y: centerY };
     }
+  });
+};
+
+/**
+ * Create edges from the graph data
+ * Uses the edge data directly from the API response
+ */
+export const createEdgesFromData = (edges, nodes) => {
+  if (!edges || !nodes) return [];
+  
+  return edges.map(edge => {
+    const source = nodes.find(n => n.id === edge.source);
+    const target = nodes.find(n => n.id === edge.target);
+    
+    if (source && target) {
+      return {
+        ...edge,
+        sourceX: source.x,
+        sourceY: source.y,
+        targetX: target.x,
+        targetY: target.y
+      };
+    }
+    
+    return edge;
   });
 };
 
@@ -65,8 +105,8 @@ export const calculateNodePositions = (nodes, expandedNodeId = null) => {
 export const createEdges = (nodes) => {
   const edges = [];
   
-  // Get parent nodes (those with ids <= 10)
-  const parentNodes = nodes.filter(node => node.id <= 10);
+  // Get parent nodes (those without parentId)
+  const parentNodes = nodes.filter(node => !node.parentId);
   
   // Connect parent nodes in a web pattern
   parentNodes.forEach((node, index) => {
@@ -81,8 +121,9 @@ export const createEdges = (nodes) => {
       
       if (target && target.id !== node.id) {
         edges.push({
-          source: { id: node.id, x: node.x, y: node.y },
-          target: { id: target.id, x: target.x, y: target.y }
+          source: node.id,
+          target: target.id,
+          type: "related_to"
         });
       }
     });
@@ -95,8 +136,9 @@ export const createEdges = (nodes) => {
       
       if (parent) {
         edges.push({
-          source: { id: parent.id, x: parent.x, y: parent.y },
-          target: { id: node.id, x: node.x, y: node.y }
+          source: parent.id,
+          target: node.id,
+          type: "parent_of"
         });
       }
     }
