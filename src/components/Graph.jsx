@@ -203,10 +203,10 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
           <marker
             id="arrowhead"
             viewBox="0 0 10 10"
-            refX="7"
+            refX="5"
             refY="5"
-            markerWidth="8"
-            markerHeight="8"
+            markerWidth="10"
+            markerHeight="10"
             orient="auto"
           >
             <polygon points="0,0 10,5 0,10" className="edge-arrow" />
@@ -229,28 +229,62 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
             const targetX = (target.x || 0) + centerOffset;
             const targetY = (target.y || 0) + centerOffset;
             
-            // Label position
-            const labelX = sourceX + (targetX - sourceX) * 0.5;
-            const labelY = sourceY + (targetY - sourceY) * 0.5 - 5;
+            // Calculate the midpoint for the arrow
+            const midX = (sourceX + targetX) / 2;
+            const midY = (sourceY + targetY) / 2;
+            
+            // Calculate direction vector
+            const dx = targetX - sourceX;
+            const dy = targetY - sourceY;
+            
+            // Label position - slightly offset from the midpoint
+            const labelX = midX;
+            const labelY = midY - 10; // Position above the arrow
             
             const isSelected = selectedEdgeId === `${edge.source}-${edge.target}`;
             
             return (
-              <g key={`edge-${edge.source}-${edge.target}`} className={`edge ${edge.type} ${isSelected ? 'selected' : ''}`}>
-                <line
-                  x1={sourceX}
-                  y1={sourceY}
-                  x2={targetX}
-                  y2={targetY}
-                  className={`graph-edge ${edge.bidirectional ? 'bidirectional' : ''} ${isSelected ? 'selected' : ''}`}
-                  onClick={() => handleEdgeClick(edge)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleEdgeClick(edge)}
-                  tabIndex="0"
-                  aria-label={`Edge from ${source.label} to ${target.label}${edge.type ? `: ${edge.type}` : ''}`}
-                  markerEnd={!edge.bidirectional ? "url(#arrowhead)" : null}
-                >
-                  {edge.description && <title>{edge.description}</title>}
-                </line>
+              <g key={`edge-${edge.source}-${edge.target}`} className={`edge ${edge.type} ${isSelected ? "selected" : ""}`}>
+                {!edge.bidirectional ? (
+                  <>
+                    {/* First half of the line (from source to midpoint) */}
+                    <line
+                      x1={sourceX}
+                      y1={sourceY}
+                      x2={midX}
+                      y2={midY}
+                      className={`graph-edge ${isSelected ? "selected" : ""}`}
+                      onClick={() => handleEdgeClick(edge)}
+                      onKeyPress={(e) => e.key === "Enter" && handleEdgeClick(edge)}
+                      tabIndex="0"
+                      aria-label={`First half of edge from ${source.label} to ${target.label}`}
+                    />
+                    
+                    {/* Second half of the line (from midpoint to target), with arrow */}
+                    <line
+                      x1={midX}
+                      y1={midY}
+                      x2={targetX}
+                      y2={targetY}
+                      className={`graph-edge ${isSelected ? "selected" : ""}`}
+                      onClick={() => handleEdgeClick(edge)}
+                      markerStart="url(#arrowhead)"
+                    />
+                  </>
+                ) : (
+                  // Bidirectional edge as a single line
+                  <line
+                    x1={sourceX}
+                    y1={sourceY}
+                    x2={targetX}
+                    y2={targetY}
+                    className={`graph-edge bidirectional ${isSelected ? "selected" : ""}`}
+                    onClick={() => handleEdgeClick(edge)}
+                    onKeyPress={(e) => e.key === "Enter" && handleEdgeClick(edge)}
+                    tabIndex="0"
+                    aria-label={`Bidirectional edge between ${source.label} and ${target.label}`}
+                  />
+                )}
                 
                 {/* Edge type label */}
                 {edge.type && (
@@ -259,11 +293,11 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                       x={labelX}
                       y={labelY}
                       textAnchor="middle"
-                      className={`edge-label ${isSelected ? 'selected' : ''}`}
+                      className={`edge-label ${isSelected ? "selected" : ""}`}
                       fontSize={isSelected ? "10" : "8"}
                       fontWeight={isSelected ? "bold" : "normal"}
                     >
-                      {edge.type.replace(/_/g, ' ')}
+                      {edge.type.replace(/_/g, " ")}
                       {edge.description && <title>{edge.description}</title>}
                     </text>
                   </g>
