@@ -5,42 +5,71 @@ import { detectBiases } from './biasDetection';
 
 // Sample initial nodes as fallback
 const initialNodes = [
-  { id: 1, label: "Decentralized Energy Grids", description: "Systems that distribute energy generation across multiple small-scale sources rather than centralized power plants.", hasBias: true, biasType: "Technological Solutionism", biasDescription: "Overemphasizing technology as the solution to complex social, economic, and political problems." },
-  { id: 2, label: "Renewable Energy Sources", description: "Energy sources that are naturally replenished on a human timescale, such as sunlight, wind, rain, tides, waves, and geothermal heat." },
-  { id: 3, label: "Grid Resilience", description: "The ability of power systems to withstand and recover from extreme events and disruptions." },
-  { id: 4, label: "Energy Storage Technologies", description: "Methods of storing energy for later use, including batteries, pumped hydro, and thermal storage.", hasBias: true, biasType: "Confirmation Bias", biasDescription: "Favoring information that confirms existing beliefs while giving less attention to alternative possibilities." },
-  { id: 5, label: "Microgrid Implementation", description: "Small-scale power grids that can operate independently or in coordination with the main grid." },
-  { id: 6, label: "Smart Grid Technologies", description: "Digital technology that allows for two-way communication between utilities and consumers." },
-  { id: 7, label: "Energy Democratization", description: "Shift of power from centralized entities to individuals and communities in energy production and distribution.", hasBias: true, biasType: "Overconfidence Bias", biasDescription: "Overestimating one's abilities, knowledge, or the accuracy of one's beliefs." },
-  { id: 8, label: "Regulatory Frameworks", description: "Legal and policy structures governing energy production, distribution, and consumption." },
-  { id: 9, label: "Community-Owned Energy", description: "Energy projects owned and operated by local communities rather than by corporations or governments." },
-  { id: 10, label: "Grid Modernization", description: "Upgrading electricity infrastructure to improve reliability, efficiency, security, and integration of renewables.", hasBias: true, biasType: "Status Quo Bias", biasDescription: "Preference for the current state of affairs and resistance to change." }
+  { id: 1, label: "Decentralized Energy Grids", description: "Systems that distribute energy generation across multiple small-scale sources rather than centralized power plants.", type: "concept", properties: { importance: 0.9, domain: "energy" }, hasBias: true, biasType: "Technological Solutionism", biasDescription: "Overemphasizing technology as the solution to complex social, economic, and political problems." },
+  { id: 2, label: "Renewable Energy Sources", description: "Energy sources that are naturally replenished on a human timescale, such as sunlight, wind, rain, tides, waves, and geothermal heat.", type: "concept", properties: { importance: 0.8, domain: "energy" } },
+  { id: 3, label: "Grid Resilience", description: "The ability of power systems to withstand and recover from extreme events and disruptions.", type: "property", properties: { importance: 0.7, domain: "energy" } },
+  { id: 4, label: "Energy Storage Technologies", description: "Methods of storing energy for later use, including batteries, pumped hydro, and thermal storage.", type: "technology", properties: { importance: 0.8, domain: "energy" }, hasBias: true, biasType: "Confirmation Bias", biasDescription: "Favoring information that confirms existing beliefs while giving less attention to alternative possibilities." },
+  { id: 5, label: "Microgrid Implementation", description: "Small-scale power grids that can operate independently or in coordination with the main grid.", type: "process", properties: { importance: 0.6, domain: "energy" } },
+  { id: 6, label: "Smart Grid Technologies", description: "Digital technology that allows for two-way communication between utilities and consumers.", type: "technology", properties: { importance: 0.7, domain: "technology" } },
+  { id: 7, label: "Energy Democratization", description: "Shift of power from centralized entities to individuals and communities in energy production and distribution.", type: "concept", properties: { importance: 0.6, domain: "society" }, hasBias: true, biasType: "Overconfidence Bias", biasDescription: "Overestimating one's abilities, knowledge, or the accuracy of one's beliefs." },
+  { id: 8, label: "Regulatory Frameworks", description: "Legal and policy structures governing energy production, distribution, and consumption.", type: "process", properties: { importance: 0.7, domain: "policy" } },
+  { id: 9, label: "Community-Owned Energy", description: "Energy projects owned and operated by local communities rather than by corporations or governments.", type: "entity", properties: { importance: 0.5, domain: "society" } },
+  { id: 10, label: "Grid Modernization", description: "Upgrading electricity infrastructure to improve reliability, efficiency, security, and integration of renewables.", type: "process", properties: { importance: 0.8, domain: "technology" }, hasBias: true, biasType: "Status Quo Bias", biasDescription: "Preference for the current state of affairs and resistance to change." }
 ];
 
-// Sample child nodes as fallback
-const childNodesMap = {
-  1: [
-    { id: 101, label: "Peer-to-Peer Energy Trading", description: "Systems allowing consumers to buy and sell excess energy directly to each other." },
-    { id: 102, label: "Blockchain for Energy", description: "Using distributed ledger technology to manage energy transactions.", hasBias: true, biasType: "Shiny Object Bias", biasDescription: "Favoring new, exciting technologies over established solutions that may work better." },
-    { id: 103, label: "Virtual Power Plants", description: "Cloud-based distributed power plants that aggregate capacity from multiple sources." }
-  ],
-  2: [
-    { id: 201, label: "Solar Photovoltaics", description: "Technology converting sunlight directly into electricity using semiconducting materials." },
-    { id: 202, label: "Wind Power Systems", description: "Conversion of wind energy into electrical power using wind turbines." },
-    { id: 203, label: "Hydroelectric Generation", description: "Electricity generated by the gravitational force of falling or flowing water." }
-  ],
-  // Add more child nodes for each parent node
+// Sample edges as fallback
+const initialEdges = [
+  { source: 1, target: 2, type: "depends_on", weight: 0.9, bidirectional: false },
+  { source: 1, target: 3, type: "leads_to", weight: 0.7, bidirectional: false },
+  { source: 1, target: 4, type: "depends_on", weight: 0.8, bidirectional: false },
+  { source: 1, target: 5, type: "is_a", weight: 0.6, bidirectional: false },
+  { source: 2, target: 4, type: "related_to", weight: 0.7, bidirectional: true },
+  { source: 3, target: 10, type: "part_of", weight: 0.8, bidirectional: false },
+  { source: 5, target: 6, type: "depends_on", weight: 0.7, bidirectional: false },
+  { source: 7, target: 9, type: "leads_to", weight: 0.8, bidirectional: false },
+  { source: 8, target: 10, type: "related_to", weight: 0.6, bidirectional: true },
+  { source: 9, target: 7, type: "example_of", weight: 0.7, bidirectional: false }
+];
+
+// Sample clusters as fallback
+const initialClusters = [
+  { id: "c1", label: "Energy Infrastructure", description: "Physical and digital systems for energy distribution", nodes: [1, 3, 5, 10] },
+  { id: "c2", label: "Energy Sources", description: "Origins and generation of power", nodes: [2, 4] },
+  { id: "c3", label: "Social Aspects", description: "Community and social dimensions of energy", nodes: [7, 9] },
+  { id: "c4", label: "Technology & Innovation", description: "Technological advancements in energy systems", nodes: [4, 6, 10] },
+  { id: "c5", label: "Governance", description: "Rules and frameworks for energy management", nodes: [8] }
+];
+
+// Sample expansions for nodes
+const nodeExpansions = {
+  1: {
+    sourceNode: {
+      id: 1,
+      label: "Decentralized Energy Grids",
+      type: "concept"
+    },
+    nodes: [
+      { id: 101, label: "Peer-to-Peer Energy Trading", description: "Systems allowing consumers to buy and sell excess energy directly to each other.", type: "process", properties: { importance: 0.7, domain: "energy" } },
+      { id: 102, label: "Blockchain for Energy", description: "Using distributed ledger technology to manage energy transactions.", type: "technology", properties: { importance: 0.6, domain: "technology" }, hasBias: true, biasType: "Shiny Object Bias", biasDescription: "Favoring new, exciting technologies over established solutions that may work better." },
+      { id: 103, label: "Virtual Power Plants", description: "Cloud-based distributed power plants that aggregate capacity from multiple sources.", type: "concept", properties: { importance: 0.8, domain: "energy" } }
+    ],
+    edges: [
+      { source: 1, target: 101, type: "leads_to", weight: 0.8, bidirectional: false },
+      { source: 1, target: 102, type: "depends_on", weight: 0.6, bidirectional: false },
+      { source: 1, target: 103, type: "part_of", weight: 0.9, bidirectional: false },
+      { source: 101, target: 102, type: "related_to", weight: 0.7, bidirectional: true }
+    ]
+  }
 };
 
 /**
  * Fetch graph data from the LLM API based on user prompt
  * @param {string} prompt - User's input prompt
- * @returns {Object} - Knowledge graph data with nodes and childNodesMap
+ * @returns {Object} - Knowledge graph data with nodes, edges, and clusters
  */
 export const fetchGraphData = async (prompt) => {
   try {
     // In a real implementation, call the server endpoint
-    // For now, simulate a delay and return hardcoded data for testing
     const endpoint = '/api/generate-graph';
     
     // If we're in development mode or don't have actual API yet, use mock data
@@ -50,7 +79,13 @@ export const fetchGraphData = async (prompt) => {
       // For testing, use the hardcoded data
       return {
         nodes: initialNodes,
-        childNodesMap: childNodesMap
+        edges: initialEdges,
+        clusters: initialClusters,
+        metadata: {
+          prompt: prompt,
+          generated: new Date().toISOString(),
+          version: "1.0"
+        }
       };
     }
     
@@ -82,44 +117,68 @@ export const fetchGraphData = async (prompt) => {
     // Return fallback data
     return {
       nodes: initialNodes,
-      childNodesMap: childNodesMap
+      edges: initialEdges,
+      clusters: initialClusters,
+      metadata: {
+        prompt: prompt,
+        generated: new Date().toISOString(),
+        version: "1.0"
+      }
     };
   }
 };
 
 /**
- * Fetch child nodes for a specific parent node
- * @param {number} nodeId - ID of the parent node
- * @param {number} limit - Maximum number of children to return
- * @returns {Object} - Object containing parentId and childNodes array
+ * Fetch expanded node data for a specific node
+ * @param {number} nodeId - ID of the node to expand
+ * @param {number} limit - Maximum number of connected nodes to return
+ * @param {string} expansionType - Type of expansion (children, related, all)
+ * @returns {Object} - Object containing nodes and edges connected to the source node
  */
-export const fetchNodeChildren = async (nodeId, limit = 3) => {
+export const fetchNodeExpansion = async (nodeId, limit = 3, expansionType = 'all') => {
   try {
     // In a real implementation, call the server endpoint
-    const endpoint = `/api/expand-node/${nodeId}?limit=${limit}`;
+    const endpoint = `/api/expand-node/${nodeId}?limit=${limit}&expansion_type=${expansionType}`;
     
     // If we're in development mode, use mock data if available
     if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' && !window.forceApiCall) {
       await new Promise(resolve => setTimeout(resolve, 800)); // Simulate API delay
       
-      // Return hardcoded children if available
-      if (childNodesMap[nodeId]) {
-        return {
-          parentId: nodeId,
-          childNodes: childNodesMap[nodeId].slice(0, limit)
-        };
+      // Return hardcoded expansion if available
+      if (nodeExpansions[nodeId]) {
+        return nodeExpansions[nodeId];
       }
       
-      // Generate mock children for testing
-      const childNodes = Array.from({ length: limit }, (_, i) => ({
+      // Generate mock expansion for testing
+      const sourceNode = initialNodes.find(n => n.id === nodeId) || { 
+        id: nodeId, 
+        label: `Node ${nodeId}`, 
+        type: "concept" 
+      };
+      
+      const mockNodes = Array.from({ length: limit }, (_, i) => ({
         id: nodeId * 100 + i + 1,
-        label: `Child Node ${i + 1}`,
-        description: `This is a mock child node for parent ${nodeId}.`
+        label: `Related to ${sourceNode.label} ${i + 1}`,
+        description: `This is a mock connected node for ${sourceNode.label}.`,
+        type: ["concept", "entity", "process", "technology"][Math.floor(Math.random() * 4)],
+        properties: {
+          importance: Math.round((0.5 + Math.random() * 0.4) * 10) / 10,
+          domain: ["energy", "technology", "science", "society"][Math.floor(Math.random() * 4)]
+        }
+      }));
+      
+      const mockEdges = mockNodes.map(node => ({
+        source: nodeId,
+        target: node.id,
+        type: ["is_a", "part_of", "related_to", "leads_to"][Math.floor(Math.random() * 4)],
+        weight: Math.round((0.6 + Math.random() * 0.3) * 10) / 10,
+        bidirectional: Math.random() > 0.7
       }));
       
       return {
-        parentId: nodeId,
-        childNodes
+        sourceNode,
+        nodes: mockNodes,
+        edges: mockEdges
       };
     }
     
@@ -132,26 +191,45 @@ export const fetchNodeChildren = async (nodeId, limit = 3) => {
     
     const data = await response.json();
     
-    // Process child nodes to detect biases
-    if (data.childNodes && Array.isArray(data.childNodes)) {
-      data.childNodes = detectBiases(data.childNodes);
+    // Process nodes to detect biases
+    if (data.nodes && Array.isArray(data.nodes)) {
+      data.nodes = detectBiases(data.nodes);
     }
     
     return data;
   } catch (error) {
-    console.error(`Error fetching children for node ${nodeId}:`, error);
+    console.error(`Error fetching expansion for node ${nodeId}:`, error);
     
-    // Return fallback children
-    const fallbackChildren = childNodesMap[nodeId] || 
-      Array.from({ length: limit }, (_, i) => ({
-        id: nodeId * 100 + i + 1,
-        label: `Child Node ${i + 1}`,
-        description: `Fallback child node for parent ${nodeId}.`
-      }));
+    // Create fallback expansion
+    const sourceNode = initialNodes.find(n => n.id === nodeId) || { 
+      id: nodeId, 
+      label: `Node ${nodeId}`, 
+      type: "concept" 
+    };
+    
+    const fallbackNodes = Array.from({ length: limit }, (_, i) => ({
+      id: nodeId * 100 + i + 1,
+      label: `Related to ${sourceNode.label} ${i + 1}`,
+      description: `Fallback connected node for ${sourceNode.label}.`,
+      type: "concept",
+      properties: {
+        importance: 0.5,
+        domain: "general"
+      }
+    }));
+    
+    const fallbackEdges = fallbackNodes.map(node => ({
+      source: nodeId,
+      target: node.id,
+      type: "related_to",
+      weight: 0.5,
+      bidirectional: false
+    }));
     
     return {
-      parentId: nodeId,
-      childNodes: fallbackChildren.slice(0, limit)
+      sourceNode,
+      nodes: fallbackNodes,
+      edges: fallbackEdges
     };
   }
 };
