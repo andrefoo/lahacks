@@ -19,20 +19,22 @@ const PromptInput = ({ onSubmit, isLoading }) => {
           <div className="input-wrapper">
             <input
               type="text"
-              placeholder="Enter your idea, question, or problem"
+              placeholder="Enter your idea, question, or problem..."
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               disabled={isLoading}
             />
             <Search className="search-icon" size={20} />
           </div>
-          <button 
-            type="submit" 
-            disabled={isLoading || !prompt.trim()}
-            className="generate-button"
-          >
-            {isLoading ? 'Generating...' : 'Generate'}
-          </button>
+          <div className="button-wrapper">
+            <button 
+              type="submit" 
+              disabled={isLoading || !prompt.trim()}
+              className="generate-button"
+            >
+              {isLoading ? 'Generating...' : 'Generate'}
+            </button>
+          </div>
         </form>
       </div>
     </div>
