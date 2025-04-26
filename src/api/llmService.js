@@ -72,23 +72,6 @@ export const fetchGraphData = async (prompt) => {
     // In a real implementation, call the server endpoint
     const endpoint = '/api/generate-graph';
     
-    // If we're in development mode or don't have actual API yet, use mock data
-    if (process.env.NODE_ENV === 'development' && window.location.hostname === 'localhost' && !window.forceApiCall) {
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
-      
-      // For testing, use the hardcoded data
-      return {
-        nodes: initialNodes,
-        edges: initialEdges,
-        clusters: initialClusters,
-        metadata: {
-          prompt: prompt,
-          generated: new Date().toISOString(),
-          version: "1.0"
-        }
-      };
-    }
-    
     // In production, make the actual API call
     const response = await fetch(endpoint, {
       method: 'POST',
