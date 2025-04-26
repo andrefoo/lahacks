@@ -5,7 +5,7 @@ import { fetchNodeExpansion } from '../api/llmService';
 
 // Component for visualizing the knowledge graph
 // Renders nodes and edges with interactive capabilities
-const Graph = ({ graphData, onNodeClick }) => {
+const Graph = ({ graphData, onNodeClick, selectedNodeId }) => {
   const [expandedNodeId, setExpandedNodeId] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
@@ -228,6 +228,7 @@ const Graph = ({ graphData, onNodeClick }) => {
               isExpanded={node.id === expandedNodeId}
               isLoading={isExpanding && node.id === expandedNodeId}
               isInActiveCluster={activeCluster ? clusters.find(c => c.id === activeCluster)?.nodes.includes(node.id) : false}
+              isSelected={node.id === selectedNodeId}
             />
             {/* expand button */}
             <g

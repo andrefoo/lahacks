@@ -27,16 +27,13 @@ const BiasIndicator = ({ biasType, x = 0, y = 0 }) => {
   };
   
   return (
-    <g className="bias-indicator" transform={`translate(${x}, ${y})`}>
-      <circle r="8" fill={getBiasColor()} />
-      <text 
-        textAnchor="middle" 
-        dy=".3em" 
-        fontSize="10" 
-        fontWeight="bold" 
-        fill="white" 
-        className="bias-symbol"
-      >
+    <g 
+      className="bias-indicator" 
+      data-bias-type={biasType || 'default'}
+      transform={`translate(${x}, ${y})`}
+    >
+      <circle r="3" fill={getBiasColor()} />
+      <text className="bias-symbol">
         {getBiasSymbol()}
       </text>
       <title>{`${biasType || 'Unknown'} bias detected`}</title>

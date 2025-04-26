@@ -2,9 +2,9 @@ import React from 'react';
 import BiasIndicator from './BiasIndicator';
 
 // Component for rendering a single node in the knowledge graph
-const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster }) => {
-  // Default dimensions
-  const radius = node.parentId ? 18 : 25; // Child nodes are slightly smaller
+const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster, isSelected }) => {
+  // Standardized radius for all nodes
+  const radius = 30;
   
   // Different colors based on node type
   const getNodeColor = () => {
@@ -20,25 +20,27 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster }) => {
     return typeColors[node.type] || '#888888'; // Gray fallback
   };
   
-  // Calculate importance radius adjustment
-  const importanceRadius = () => {
-    const importance = node.properties?.importance || 0.5;
-    return radius * (0.8 + (importance * 0.4)); // Scale radius by importance
+  const handleClick = () => {
+    onClick(node);
   };
-  
-  const nodeRadius = importanceRadius();
   
   const handleKeyPress = (event) => {
     if (event.key === 'Enter' || event.key === ' ') {
-      onClick(node);
+      handleClick();
     }
+  };
+
+  // Truncate text to fit within node
+  const truncateText = (text, maxLength) => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - 3) + '...';
   };
   
   return (
     <g
-      className={`graph-node ${node.type || ''} ${isExpanded ? 'expanded' : ''} ${isInActiveCluster ? 'active-cluster' : ''}`}
+      className={`graph-node ${node.type || ''} ${isExpanded ? 'expanded' : ''} ${isInActiveCluster ? 'active-cluster' : ''} ${isSelected ? 'selected' : ''}`}
       transform={`translate(${node.x || 0}, ${node.y || 0})`}
-      onClick={() => onClick(node)}
+      onClick={handleClick}
       onKeyPress={handleKeyPress}
       style={{ cursor: 'pointer' }}
       data-node-id={node.id}
@@ -66,7 +68,7 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster }) => {
       
       {/* Node circle */}
       <circle
-        r={nodeRadius}
+        r={radius}
         fill={getNodeColor()}
         strokeWidth={isExpanded ? 3 : 1.5}
         className="node-circle"
@@ -75,7 +77,7 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster }) => {
       {/* Show loading indicator */}
       {isLoading && (
         <circle
-          r={nodeRadius + 5}
+          r={radius + 5}
           className="loading-indicator"
           strokeDasharray="10 5"
           fill="none"
@@ -87,7 +89,7 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster }) => {
       {/* Show expanded indicator */}
       {isExpanded && !isLoading && (
         <circle
-          r={nodeRadius + 4}
+          r={radius + 4}
           className="expanded-indicator"
           fill="none"
           stroke="#444"
@@ -100,18 +102,18 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster }) => {
       <text
         textAnchor="middle"
         dy=".3em"
-        fontSize={node.parentId ? 8 : 10}
+        fontSize="10"
         fontWeight="bold"
         fill="#fff"
         className="node-label"
       >
-        {node.label.length > 20 ? `${node.label.substring(0, 18)}...` : node.label}
+        {truncateText(node.label, 15)}
       </text>
       
       {/* Node type indicator */}
       <text
         textAnchor="middle"
-        dy={nodeRadius + 15}
+        dy={radius + 15}
         fontSize="8"
         className="node-type-label"
       >
@@ -122,8 +124,8 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster }) => {
       {node.hasBias && (
         <BiasIndicator
           biasType={node.biasType}
-          x={-nodeRadius - 5}
-          y={-nodeRadius - 5}
+          x={-radius - 5}
+          y={-radius - 5}
         />
       )}
       
@@ -131,7 +133,7 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster }) => {
       {node.properties?.domain && (
         <text
           textAnchor="start"
-          x={nodeRadius + 5}
+          x={radius + 5}
           y="5"
           fontSize="7"
           className="domain-badge"

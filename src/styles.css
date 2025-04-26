@@ -203,7 +203,6 @@ button {
   background-color: primary;
   width: 100%;
   height: 100%;
-  /* display: block; */
 }
 
 .graph-edge {
@@ -214,30 +213,71 @@ button {
 
 .graph-node {
   cursor: pointer;
-  transition: transform 0.3s;
-}
-
-.graph-node:hover {
-  /* transform: scale(1.05); */
+  transition: all 0.3s ease;
+  outline: none; /* Remove focus outline */
 }
 
 .node-circle {
   fill: #1f2937;
   stroke: #4b5563;
-  stroke-width: 1;
-  transition: all 0.3s;
+  stroke-width: 1.5;
+  transition: all 0.3s ease;
+}
+
+/* Standardize node size */
+.graph-node circle {
+  r: 30px;
+}
+
+/* Node selection highlight */
+.graph-node.selected .node-circle {
+  fill: var(--accent);
+  stroke: var(--secondary);  /* Changed to secondary color for better contrast */
+  stroke-width: 3;          /* Increased stroke width */
+  filter: drop-shadow(0 0 8px var(--accent));  /* Added glow effect */
+}
+
+.graph-node.selected .node-label {
+  fill: var(--primary);
+  font-weight: bold;        /* Made text bolder */
+}
+
+/* Node label text fitting */
+.node-label {
+  fill: white;
+  font-weight: 500;
+  pointer-events: none;
+  font-size: 10px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  max-width: 45px;
+  /* Add dynamic text fitting properties */
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Maximum of 3 lines */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  line-height: 1.1;
+  /* Remove any transforms that might interfere */
+  transform: none;
+}
+
+/* Node type label */
+.node-type-label {
+  fill: #94a3b8;
+  font-size: 8px;
+  text-anchor: middle;
+}
+
+/* Domain badge */
+.domain-badge {
+  fill: #94a3b8;
+  font-size: 7px;
 }
 
 .node-circle.has-bias {
   stroke: #f97316;
   stroke-width: 3;
   animation: pulse 2s infinite;
-}
-
-.node-label {
-  fill: white;
-  font-weight: 500;
-  pointer-events: none;
 }
 
 .graph-node.expanded .node-circle {
@@ -259,16 +299,48 @@ button {
   pointer-events: auto;
 }
 
+/* Bias Indicator */
 .bias-indicator {
   pointer-events: none;
+  transform: translate(-22px, -22px); /* Position to top-left, with partial overlap */
 }
 
-.bias-circle {
-  fill: #f97316;
+.bias-indicator circle {
+  r: 8;
+  transition: all 0.3s ease;
 }
 
-.bias-icon {
+.bias-symbol {
+  font-size: 10px;
+  font-weight: bold;
   fill: white;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+/* Different colors for different bias types */
+.bias-indicator[data-bias-type="cultural"] circle {
+  fill: #FF5252;
+}
+
+.bias-indicator[data-bias-type="cognitive"] circle {
+  fill: #FF9800;
+}
+
+.bias-indicator[data-bias-type="statistical"] circle {
+  fill: #FFEB3B;
+}
+
+.bias-indicator[data-bias-type="political"] circle {
+  fill: #E040FB;
+}
+
+.bias-indicator[data-bias-type="social"] circle {
+  fill: #2196F3;
+}
+
+.bias-indicator[data-bias-type="default"] circle {
+  fill: #F44336;
 }
 
 /* Sidebar */
@@ -322,6 +394,14 @@ button {
   font-size: 0.875rem;
   line-height: 1.5;
   background-color: transparent;
+}
+
+.bias-symbol {
+  font-size: 10px;
+  font-weight: bold;
+  fill: white;
+  text-anchor: middle;
+  dominant-baseline: middle;
 }
 
 .bias-section {

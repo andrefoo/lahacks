@@ -34,8 +34,15 @@ function App() {
 
   // Handle node click
   const handleNodeClick = (node) => {
-    setActiveNode(node);
-    setShowSidebar(true);
+    // If clicking the same node, deselect it
+    if (activeNode?.id === node.id) {
+      setActiveNode(null);
+      setShowSidebar(false);
+    } else {
+      // Select the new node
+      setActiveNode(node);
+      setShowSidebar(true);
+    }
   };
 
   // Close sidebar
@@ -70,6 +77,7 @@ function App() {
             <Graph
               graphData={graphData}
               onNodeClick={handleNodeClick}
+              selectedNodeId={activeNode?.id}
             />
           )}
 
