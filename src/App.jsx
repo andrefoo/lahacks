@@ -15,12 +15,15 @@ function App() {
   const [activeNode, setActiveNode] = useState(null);
   const [activeEdge, setActiveEdge] = useState(null);
   const [showSidebar, setShowSidebar] = useState(false);
+  const [error, setError] = useState(null);
 
   // Handle prompt submission
   const handlePromptSubmit = async (prompt) => {
     if (!prompt.trim()) return;
 
     setIsLoading(true);
+    setError(null);
+    
     try {
       // Fetch graph data from LLM service
       const data = await fetchGraphData(prompt);
@@ -28,6 +31,7 @@ function App() {
       setIsGenerated(true);
     } catch (error) {
       console.error('Error generating graph:', error);
+      setError("Failed to generate graph. Please try again with a different prompt.");
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +104,10 @@ function App() {
         {/* Main content */}
         <main className="app-main">
           {!isGenerated ? (
-            <PromptInput onSubmit={handlePromptSubmit} isLoading={isLoading} />
+            <>
+              <PromptInput onSubmit={handlePromptSubmit} isLoading={isLoading} />
+              {error && <div className="error-message">{error}</div>}
+            </>
           ) : (
             <Graph
               graphData={graphData}

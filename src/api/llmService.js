@@ -69,10 +69,8 @@ const nodeExpansions = {
  */
 export const fetchGraphData = async (prompt) => {
   try {
-    // In a real implementation, call the server endpoint
     const endpoint = '/api/generate-graph';
     
-    // In production, make the actual API call
     const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
@@ -96,18 +94,7 @@ export const fetchGraphData = async (prompt) => {
     };
   } catch (error) {
     console.error('Error fetching graph data:', error);
-    
-    // Return fallback data
-    return {
-      nodes: initialNodes,
-      edges: initialEdges,
-      clusters: initialClusters,
-      metadata: {
-        prompt: prompt,
-        generated: new Date().toISOString(),
-        version: "1.0"
-      }
-    };
+    throw error;
   }
 };
 
@@ -120,10 +107,8 @@ export const fetchGraphData = async (prompt) => {
  */
 export const fetchNodeExpansion = async (nodeId, limit = 3, expansionType = 'all') => {
   try {
-    // Always use the real API endpoint
     const endpoint = `/api/expand-node/${nodeId}?limit=${limit}&expansion_type=${expansionType}`;
     
-    // Make the API call
     const response = await fetch(endpoint);
     
     if (!response.ok) {
@@ -140,38 +125,7 @@ export const fetchNodeExpansion = async (nodeId, limit = 3, expansionType = 'all
     return data;
   } catch (error) {
     console.error(`Error fetching expansion for node ${nodeId}:`, error);
-    
-    // Create fallback expansion
-    const sourceNode = initialNodes.find(n => n.id === nodeId) || { 
-      id: nodeId, 
-      label: `Node ${nodeId}`, 
-      type: "concept" 
-    };
-    
-    const fallbackNodes = Array.from({ length: limit }, (_, i) => ({
-      id: nodeId * 100 + i + 1,
-      label: `Related to ${sourceNode.label} ${i + 1}`,
-      description: `Fallback connected node for ${sourceNode.label}.`,
-      type: "concept",
-      properties: {
-        importance: 0.5,
-        domain: "general"
-      }
-    }));
-    
-    const fallbackEdges = fallbackNodes.map(node => ({
-      source: nodeId,
-      target: node.id,
-      type: "related_to",
-      weight: 0.5,
-      bidirectional: false
-    }));
-    
-    return {
-      sourceNode,
-      nodes: fallbackNodes,
-      edges: fallbackEdges
-    };
+    throw error;
   }
 };
 
