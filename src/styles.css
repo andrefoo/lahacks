@@ -212,7 +212,6 @@ button {
   text-align: center;
 }
 
-
 .generate-button:hover {
   background-color: var(--accent);
   color: var(--primary);
@@ -628,9 +627,23 @@ button {
   pointer-events: none;
   font-size: 8px;
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  background: transparent;
 }
 
 .edge-label.selected {
   fill: white;
   font-weight: bold;
+  background: transparent; 
+  border: 0px;
+}
+
+/* Make sure the edge label container has no visible elements */
+.edge-label-container {
+  fill: none;
+  stroke: none;
+}
+
+.edge-label-container text {
+  stroke: none;
+  paint-order: stroke;
 }

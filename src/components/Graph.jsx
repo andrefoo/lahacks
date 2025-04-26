@@ -230,6 +230,11 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
           >
             <polygon points="0,0 10,5 0,10" className="edge-arrow" />
           </marker>
+          
+          {/* Define clipPath for edge labels */}
+          <clipPath id="edge-label-clip">
+            <text x="0" y="0" textAnchor="middle">dummy</text>
+          </clipPath>
         </defs>
         
         {/* Render edges */}
@@ -334,15 +339,6 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                     aria-label={`Relationship ${edge.type} between ${sourceLabel} and ${targetLabel}`}
                     style={{ cursor: "pointer" }}
                   >
-                    {/* Invisible larger hitbox for better clickability */}
-                    <rect
-                      x={labelX - 30}
-                      y={labelY - 15}
-                      width="60"
-                      height="20"
-                      fill="transparent"
-                    />
-                    
                     <text
                       x={labelX}
                       y={labelY}
@@ -350,6 +346,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                       className={`edge-label ${isSelected ? "selected" : ""}`}
                       fontSize={isSelected ? "10" : "8"}
                       fontWeight={isSelected ? "bold" : "normal"}
+                      style={{ pointerEvents: "all" }}
                     >
                       {edge.type.replace(/_/g, " ")}
                       {edge.description && <title>{edge.description}</title>}
