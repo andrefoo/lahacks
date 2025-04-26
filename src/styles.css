@@ -9,9 +9,9 @@
 }
 
 :root {
-  --primary: #152a32;
+  --primary: #2c2a4a;
   --secondary: #f8f4eb;
-  --text: #152a32;
+  --text: #2c2a4a;
   --accent: #c9b5ff;
   --turq-green: #00d47f;
   --dark-gray: #334155;
@@ -68,6 +68,17 @@ button {
 .app-header h1 {
   font-size: 1.5rem;
   font-weight: bold;
+}
+
+.header-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-logo {
+  height: 1.8em; /* This makes the logo height match the font size of the h1 */
+  width: auto; /* Maintains aspect ratio */
 }
 
 .subtitle .edge-label {

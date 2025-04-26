@@ -3,6 +3,7 @@ import PromptInput from './components/PromptInput';
 import Graph from './components/Graph';
 import Sidebar from './components/Sidebar';
 import StarTrail from './components/StarTrail';
+import logo2 from './assets/logo-2.png';
 import { fetchGraphData } from './api/llmService';
 
 // Main App component
@@ -97,7 +98,10 @@ function App() {
       <div className="app-container">
         {/* Header */}
         <header className="app-header">
-          <h1>Constellation</h1>
+          <div className="header-title">
+            <img src={logo2} alt="Constellation Logo" className="header-logo" />
+            <h1>Constellation</h1>
+          </div>
           {!isGenerated && <div className="subtitle">Knowledge Graph Bias Detection</div>}
         </header>
 
