@@ -278,7 +278,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
 
         {/* Modified node rendering */}
         {nodes.map((node) => (
-          <g key={`node-${node.id}`}>
+          <g key={`node-${node.id}`} className={isExpanding && node.id === expandedNodeId ? 'loading' : ''}>
             <Node
               node={node}
               onClick={handleNodeClick}
@@ -294,21 +294,22 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
               isSelected={node.id === selectedNodeId}
             />
             {/* expand button */}
-            <g
-              className="expand-button"
-              transform={`translate(${node.x + 20}, ${node.y - 20})`}
-              onClick={(e) => handleExpandClick(node.id, e)}
-              onKeyPress={(e) => e.key === 'Enter' && handleExpandClick(node.id, e)}
-              tabIndex="0"
-              aria-label={`Expand node ${node.label}`}
-              role="button"
-              style={{ cursor: 'pointer' }}
-            >
-              <circle r="8" fill="#ffffff" stroke="#666666" strokeWidth="1" />
-              <text textAnchor="middle" dy=".3em" fontSize="12" fill="#666666">
-                +
-              </text>
-            </g>
+            {!node.expanded && !isExpanding && (
+              <g
+                className="expand-button"
+                transform={`translate(${node.x + 20}, ${node.y - 20})`}
+                onClick={(e) => handleExpandClick(node.id, e)}
+                onKeyPress={(e) => e.key === 'Enter' && handleExpandClick(node.id, e)}
+                tabIndex="0"
+                aria-label={`Expand node ${node.label}`}
+                role="button"
+              >
+                <circle r="8" fill="#ffffff" stroke="#666666" strokeWidth="1" />
+                <text textAnchor="middle" dy=".3em" fontSize="12" fill="#666666">
+                  +
+                </text>
+              </g>
+            )}
           </g>
         ))}
       </svg>
