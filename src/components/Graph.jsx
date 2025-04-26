@@ -5,13 +5,14 @@ import { fetchNodeExpansion } from '../api/llmService';
 
 // Component for visualizing the knowledge graph
 // Renders nodes and edges with interactive capabilities
-const Graph = ({ graphData, onNodeClick, selectedNodeId }) => {
+const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
   const [expandedNodeId, setExpandedNodeId] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [clusters, setClusters] = useState([]);
   const [isExpanding, setIsExpanding] = useState(false);
   const [activeCluster, setActiveCluster] = useState(null);
+  const [selectedEdgeId, setSelectedEdgeId] = useState(null);
   const nodesRef = useRef(nodes);
 
   // Initialize graph with data from props
@@ -98,6 +99,17 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId }) => {
   // Handle node click - only notify parent, no auto-expansion
   const handleNodeClick = (node) => {
     onNodeClick(node);
+    setSelectedEdgeId(null); // Clear edge selection when clicking a node
+  };
+
+  // Handle edge click
+  const handleEdgeClick = (edge) => {
+    const edgeId = `${edge.source}-${edge.target}`;
+    setSelectedEdgeId(edgeId === selectedEdgeId ? null : edgeId);
+    
+    if (onEdgeClick && edge) {
+      onEdgeClick(edge);
+    }
   };
 
   // New handler for expand button click
@@ -179,19 +191,28 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId }) => {
         {edges.map((edge, index) => {
           const source = nodes.find(n => n.id === edge.source);
           const target = nodes.find(n => n.id === edge.target);
+          const edgeId = `${edge.source}-${edge.target}`;
+          const isSelected = selectedEdgeId === edgeId;
           
           if (!source || !target || !source.x || !target.x) return null;
           
           return (
-            <g key={`edge-${edge.source}-${edge.target}`} className={`edge ${edge.type}`}>
+            <g 
+              key={`edge-${edge.source}-${edge.target}`} 
+              className={`edge ${edge.type} ${isSelected ? 'selected' : ''}`}
+              onClick={() => handleEdgeClick(edge)}
+              style={{ cursor: 'pointer' }}
+            >
               <line
                 x1={source.x}
                 y1={source.y}
                 x2={target.x}
                 y2={target.y}
-                className={`graph-edge ${edge.bidirectional ? 'bidirectional' : ''}`}
-                strokeWidth={edge.weight ? edge.weight * 3 : 1}
-              />
+                className={`graph-edge ${edge.bidirectional ? 'bidirectional' : ''} ${isSelected ? 'selected' : ''}`}
+                strokeWidth={edge.weight ? (isSelected ? edge.weight * 5 : edge.weight * 3) : (isSelected ? 3 : 1)}
+              >
+                {edge.description && <title>{edge.description}</title>}
+              </line>
               {/* Arrow marker for directed edges */}
               {!edge.bidirectional && (
                 <polygon 
@@ -202,15 +223,19 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId }) => {
               )}
               {/* Edge type label */}
               {edge.type && (
-                <text
-                  x={(source.x + target.x) / 2}
-                  y={(source.y + target.y) / 2 - 5}
-                  textAnchor="middle"
-                  className="edge-label"
-                  fontSize="8"
-                >
-                  {edge.type.replace(/_/g, ' ')}
-                </text>
+                <g className="edge-label-container">
+                  <text
+                    x={(source.x + target.x) / 2}
+                    y={(source.y + target.y) / 2 - 5}
+                    textAnchor="middle"
+                    className={`edge-label ${isSelected ? 'selected' : ''}`}
+                    fontSize={isSelected ? "10" : "8"}
+                    fontWeight={isSelected ? "bold" : "normal"}
+                  >
+                    {edge.type.replace(/_/g, ' ')}
+                    {edge.description && <title>{edge.description}</title>}
+                  </text>
+                </g>
               )}
             </g>
           );

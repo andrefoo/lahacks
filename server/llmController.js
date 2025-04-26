@@ -98,38 +98,71 @@ const initialEdges = [
     type: "depends_on",
     weight: 0.9,
     bidirectional: false,
+    description: "Decentralized energy grids rely on renewable energy sources to operate efficiently."
   },
-  { source: 1, target: 3, type: "leads_to", weight: 0.7, bidirectional: false },
+  { 
+    source: 1, 
+    target: 3, 
+    type: "leads_to", 
+    weight: 0.7, 
+    bidirectional: false,
+    description: "Implementation of decentralized energy grids enhances overall grid resilience."
+  },
   {
     source: 1,
     target: 4,
     type: "depends_on",
     weight: 0.8,
     bidirectional: false,
+    description: "Effective decentralized energy grids require advanced energy storage technologies."
   },
-  { source: 1, target: 5, type: "is_a", weight: 0.6, bidirectional: false },
+  { 
+    source: 1, 
+    target: 5, 
+    type: "is_a", 
+    weight: 0.6, 
+    bidirectional: false,
+    description: "Decentralized energy grids are a form of microgrid implementation at a broader scale."
+  },
   {
     source: 2,
     target: 4,
     type: "related_to",
     weight: 0.7,
     bidirectional: true,
+    description: "Renewable energy sources and storage technologies work together to ensure consistent energy supply."
   },
-  { source: 3, target: 10, type: "part_of", weight: 0.8, bidirectional: false },
+  { 
+    source: 3, 
+    target: 10, 
+    type: "part_of", 
+    weight: 0.8, 
+    bidirectional: false,
+    description: "Grid resilience is an essential component of comprehensive grid modernization efforts."
+  },
   {
     source: 5,
     target: 6,
     type: "depends_on",
     weight: 0.7,
     bidirectional: false,
+    description: "Successful microgrid implementation requires smart grid technologies for monitoring and control."
   },
-  { source: 7, target: 9, type: "leads_to", weight: 0.8, bidirectional: false },
+  { 
+    source: 7, 
+    target: 9, 
+    type: "leads_to", 
+    weight: 0.8, 
+    bidirectional: false,
+    description: "Energy democratization principles encourage the development of community-owned energy projects."
+  },
   {
     source: 8,
     target: 10,
     type: "related_to",
     weight: 0.6,
     bidirectional: true,
+    description: "Regulatory frameworks guide and govern grid modernization initiatives and implementation."
   },
   {
     source: 9,
@@ -137,6 +170,7 @@ const initialEdges = [
     type: "example_of",
     weight: 0.7,
     bidirectional: false,
+    description: "Community-owned energy projects exemplify the concept of energy democratization in practice."
   },
 ];
 
@@ -210,6 +244,7 @@ const expandNodeData = {
         type: "leads_to",
         weight: 0.8,
         bidirectional: false,
+        description: "Decentralized energy grids enable peer-to-peer energy trading by providing the infrastructure for direct energy exchange."
       },
       {
         source: 1,
@@ -217,6 +252,7 @@ const expandNodeData = {
         type: "depends_on",
         weight: 0.6,
         bidirectional: false,
+        description: "Decentralized energy grids increasingly utilize blockchain technology to manage secure and transparent energy transactions."
       },
       {
         source: 1,
@@ -224,6 +260,7 @@ const expandNodeData = {
         type: "part_of",
         weight: 0.9,
         bidirectional: false,
+        description: "Virtual power plants are an implementation strategy within decentralized energy grid systems to aggregate distributed resources."
       },
       {
         source: 101,
@@ -231,6 +268,7 @@ const expandNodeData = {
         type: "related_to",
         weight: 0.7,
         bidirectional: true,
+        description: "Peer-to-peer energy trading often leverages blockchain technology to facilitate secure transactions between energy prosumers."
       },
     ],
   },
@@ -268,6 +306,7 @@ const expandNodeData = {
         type: "example_of",
         weight: 0.9,
         bidirectional: false,
+        description: "Solar photovoltaics are a primary example of renewable energy sources that convert natural phenomena into electricity."
       },
       {
         source: 2,
@@ -275,6 +314,7 @@ const expandNodeData = {
         type: "example_of",
         weight: 0.8,
         bidirectional: false,
+        description: "Wind power systems represent a major category of renewable energy sources that harness natural air movement."
       },
       {
         source: 2,
@@ -282,6 +322,7 @@ const expandNodeData = {
         type: "example_of",
         weight: 0.7,
         bidirectional: false,
+        description: "Hydroelectric generation is a classical example of renewable energy that utilizes water cycle processes."
       },
     ],
   },
@@ -600,6 +641,7 @@ exports.expandNode = async (req, res) => {
       Also generate edges connecting these new nodes to the source node and to each other with:
       - Source and target node IDs
       - A relationship type (is_a, part_of, related_to, leads_to, depends_on, contradicts, similar_to, example_of)
+      - A description explaining the relationship between the two nodes (1-2 sentences)
       - A weight value (0-1)
       - Whether it's bidirectional
       
@@ -614,7 +656,7 @@ exports.expandNode = async (req, res) => {
         "edges": [
           { "source": ${id}, "target": ${
       id * 100 + 1
-    }, "type": "is_a", "weight": 0.8, "bidirectional": false },
+    }, "type": "is_a", "weight": 0.8, "bidirectional": false, "description": "Description of how these nodes relate" },
           ...
         ]
       }
@@ -782,6 +824,7 @@ function generateFallbackExpansion(sourceNode, limit = 3) {
       ],
       weight: Math.round((0.6 + Math.random() * 0.3) * 10) / 10,
       bidirectional: Math.random() > 0.7,
+      description: `${sourceNode.label} ${relationshipTypes[Math.floor(Math.random() * relationshipTypes.length)].replace('_', ' ')} ${node.label.toLowerCase()} through various mechanisms and interactions.`
     });
   });
 
@@ -794,6 +837,7 @@ function generateFallbackExpansion(sourceNode, limit = 3) {
         type: "related_to",
         weight: Math.round((0.5 + Math.random() * 0.3) * 10) / 10,
         bidirectional: Math.random() > 0.5,
+        description: `${nodes[i].label} and ${nodes[i + 1].label} are interconnected concepts within the broader domain of ${sourceNode.label.toLowerCase()}.`
       });
     }
   }
