@@ -1,0 +1,32 @@
+{
+  "name": "constellation",
+  "version": "0.1.0",
+  "description": "Interactive knowledge graph with bias detection",
+  "main": "server/index.js",
+  "scripts": {
+    "start": "node server/index.js",
+    "dev:client": "vite",
+    "dev:server": "nodemon server/index.js",
+    "dev": "concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "build": "vite build",
+    "serve": "vite preview"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "lucide-react": "^0.292.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.2.37",
+    "@types/react-dom": "^18.2.15",
+    "@vitejs/plugin-react": "^4.2.0",
+    "concurrently": "^8.2.2",
+    "nodemon": "^3.0.1",
+    "vite": "^5.0.0"
+  }
+} 
