@@ -296,9 +296,9 @@ exports.generateGraph = async (req, res) => {
     }
 
     // Check for API key
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.warn('No API key found. Using fallback data.');
+      console.warn('No Gemini API key found. Using fallback data.');
       return res.json({
         nodes: initialNodes,
         edges: initialEdges,
@@ -357,14 +357,18 @@ exports.generateGraph = async (req, res) => {
     // Call Gemini API
     let response;
     try {
+      console.log("Making Gemini API request...");
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
       response = await axios.post(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
+        apiUrl,
         {
           contents: [
             {
-              role: "user",
-              parts: [{ text: systemPrompt }, { text: prompt }],
-            },
+              parts: [
+                { text: systemPrompt },
+                { text: prompt }
+              ]
+            }
           ],
           generationConfig: {
             temperature: 0.7,
@@ -373,22 +377,36 @@ exports.generateGraph = async (req, res) => {
         },
         {
           headers: {
-            Authorization: `Bearer ${process.env.GEMINI_API_KEY || apiKey}`,
             "Content-Type": "application/json",
-          },
-          params: {
-            key: process.env.GEMINI_API_KEY || apiKey,
-          },
+          }
         }
       );
+      console.log("Received Gemini API response");
     } catch (error) {
-      console.log("Error calling Gemini API:", error);
+      console.error("Error calling Gemini API:", error.response ? error.response.data : error.message);
       return res.status(500).json({ error: "Error calling Gemini API" });
     }
-    // Parse the LLM response
-    const content = response.data.choices[0].message.content.trim();
-    let graphData;
+    
+    // Parse the Gemini response (different from OpenAI format)
+    let content;
+    try {
+      // Gemini response has a different schema
+      if (response.data?.candidates && response.data.candidates.length > 0) {
+        const candidate = response.data.candidates[0];
+        if (candidate?.content?.parts && candidate.content.parts.length > 0) {
+          content = candidate.content.parts[0].text;
+        } else {
+          throw new Error("No content in Gemini response");
+        }
+      } else {
+        throw new Error("Invalid Gemini response structure");
+      }
+    } catch (error) {
+      console.error("Error extracting content from Gemini response:", error);
+      return res.status(500).json({ error: "Error parsing Gemini response" });
+    }
 
+    let graphData;
     try {
       // Extract JSON from the response (in case there's additional text)
       const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -412,7 +430,7 @@ exports.generateGraph = async (req, res) => {
         version: "1.0",
       };
     } catch (parseError) {
-      console.log("Error parsing LLM response:", parseError);
+      console.error("Error parsing LLM response:", parseError);
       // Use fallback data on parsing error
       graphData = {
         nodes: initialNodes,
@@ -429,7 +447,7 @@ exports.generateGraph = async (req, res) => {
     // Return the graph data
     res.json(graphData);
   } catch (error) {
-    console.log("Error generating graph:", error);
+    console.error("Error generating graph:", error);
 
     // Return fallback data on error
     res.json({
@@ -487,9 +505,9 @@ exports.expandNode = async (req, res) => {
     }
 
     // Check for API key
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      console.log("No OpenAI API key found. Using generated expansion data.");
+      console.log("No Gemini API key found. Using generated expansion data.");
 
       // Generate fallback expansion
       const expansion = generateFallbackExpansion(sourceNode, limit);
@@ -533,22 +551,18 @@ exports.expandNode = async (req, res) => {
       }
     `;
 
-    console.log("System prompt:");
-
+    console.log("Making Gemini API request for node expansion...");
     // Call Google Gemini API
     const response = await axios.post(
-      "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent",
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
       {
         contents: [
           {
-            role: "user",
             parts: [
               { text: systemPrompt },
-              {
-                text: `Generate connected nodes for the concept: "${sourceNode.label}"`,
-              },
-            ],
-          },
+              { text: `Generate connected nodes for the concept: "${sourceNode.label}"` }
+            ]
+          }
         ],
         generationConfig: {
           temperature: 0.7,
@@ -557,21 +571,28 @@ exports.expandNode = async (req, res) => {
       },
       {
         headers: {
-          Authorization: `Bearer ${process.env.GEMINI_API_KEY || apiKey}`,
           "Content-Type": "application/json",
-        },
-        params: {
-          key: process.env.GEMINI_API_KEY || apiKey,
-        },
+        }
       }
     );
 
-    console.log("LLM response:", response.data);
+    console.log("Received Gemini API response for node expansion");
 
-    // Parse the LLM response
-    const content = response.data.choices[0].message.content.trim();
-    let expansion;
-
+    // Parse the Gemini response (different from OpenAI format)
+    let content;
+    if (response.data?.candidates && response.data.candidates.length > 0) {
+      const candidate = response.data.candidates[0];
+      if (candidate?.content?.parts && candidate.content.parts.length > 0) {
+        content = candidate.content.parts[0].text;
+      } else {
+        throw new Error("No content in Gemini response");
+      }
+    } else {
+      throw new Error("Invalid Gemini response structure");
+    }
+    
+    // Create the expansion object
+    let nodeExpansion;
     try {
       // Extract JSON from the response (in case there's additional text)
       const jsonMatch = content.match(/\{[\s\S]*\}/);
@@ -588,7 +609,7 @@ exports.expandNode = async (req, res) => {
         throw new Error("Invalid response structure");
       }
 
-      expansion = {
+      nodeExpansion = {
         sourceNode: {
           id: sourceNode.id,
           label: sourceNode.label,
@@ -598,15 +619,15 @@ exports.expandNode = async (req, res) => {
         edges: parsed.edges,
       };
     } catch (parseError) {
-      console.log("Error parsing LLM response:", parseError);
+      console.error("Error parsing LLM response:", parseError);
       // Use fallback data on parsing error
-      expansion = generateFallbackExpansion(sourceNode, limit);
+      nodeExpansion = generateFallbackExpansion(sourceNode, limit);
     }
 
     // Return the expansion data
-    res.json(expansion);
+    res.json(nodeExpansion);
   } catch (error) {
-    console.log("Error expanding node:", error);
+    console.error("Error expanding node:", error);
 
     // Generate fallback on error
     const id = Number.parseInt(req.params.nodeId, 10);
