@@ -1,10 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 // Component for the initial prompt input screen
 // Provides an input field and submit button for generating the knowledge graph
 const PromptInput = ({ onSubmit, isLoading }) => {
   const [prompt, setPrompt] = useState('');
+  const [loadingDots, setLoadingDots] = useState('');
+
+  useEffect(() => {
+    let interval;
+    if (isLoading) {
+      interval = setInterval(() => {
+        setLoadingDots(prev => prev.length >= 3 ? '' : prev + '.');
+      }, 500);
+    } else {
+      setLoadingDots('');
+    }
+    return () => clearInterval(interval);
+  }, [isLoading]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -14,7 +28,11 @@ const PromptInput = ({ onSubmit, isLoading }) => {
   return (
     <div className="prompt-container">
       <div className="prompt-card">
-        <h2>Explore Knowledge Graph</h2>
+        <img src={logo} alt="Constellation Logo" className="prompt-logo" />
+        <h2>Rediscover the Power of Thinking</h2>
+        <p className="prompt-subheader">
+          Prompt with a curiosity, a challenge, or an idea. (e.g., 'What causes scientific revolutions?', 'How does bias shape decision-making?', 'What's the future of education?') Watch knowledge unfold in unexpected ways.
+        </p>
         <form onSubmit={handleSubmit} className="prompt-form">
           <div className="input-wrapper">
             <input
@@ -32,7 +50,7 @@ const PromptInput = ({ onSubmit, isLoading }) => {
               disabled={isLoading || !prompt.trim()}
               className="generate-button"
             >
-              {isLoading ? 'Generating...' : 'Generate'}
+              {isLoading ? `Generating${loadingDots}` : 'Generate'}
             </button>
           </div>
         </form>
