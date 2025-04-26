@@ -138,6 +138,7 @@ const Graph = ({ graphData, onNodeClick }) => {
         >
           <foreignObject width="1" height="1" style={{ overflow: 'visible' }}>
             <button
+              type="button"
               style={{ 
                 background: 'none',
                 border: 'none',
