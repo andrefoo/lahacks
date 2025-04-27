@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { fetchGraphData } from './api/llmService';
 import logo2 from './assets/logo-2.png';
 import Graph from './components/Graph';
@@ -130,12 +130,12 @@ function App() {
   };
 
   // Pan functionality - end dragging
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   // Zoom functionality
-  const handleWheel = (e) => {
+  const handleWheel = useCallback((e) => {
     e.preventDefault();
     
     // Calculate new scale with zoom speed factor
@@ -158,7 +158,7 @@ function App() {
       y: newY,
       scale: newScale
     });
-  };
+  }, [transform]);
 
   // Reset zoom and pan to default
   const resetView = () => {
@@ -182,7 +182,7 @@ function App() {
         container.removeEventListener('wheel', handleWheel);
       };
     }
-  }, [isGenerated]);
+  }, [isGenerated, handleWheel]);
 
   // Handle mouse leaving the container while dragging
   useEffect(() => {
@@ -199,7 +199,7 @@ function App() {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [isDragging]);
+  }, [isDragging, handleMouseUp]);
 
   const handleNodeMouseEnter = (nodeId) => {
     setHoverNodeId(nodeId);
@@ -293,10 +293,10 @@ function App() {
               </div>
               
               <div className="graph-controls">
-                <button onClick={resetView} title="Reset View">
+                <button type="button" onClick={resetView} title="Reset View">
                   <span>🔄</span>
                 </button>
-                <button onClick={fitToScreen} title="Fit to Screen">
+                <button type="button" onClick={fitToScreen} title="Fit to Screen">
                   <span>🔍</span>
                 </button>
                 <div className="zoom-level">
@@ -319,8 +319,8 @@ function App() {
         {/* Footer with controls */}
         {isGenerated && (
           <footer className="app-footer">
-            <button onClick={handleReset}>New Prompt</button>
-            <button>Highlight Biases</button>
+            <button type="button" onClick={handleReset}>New Prompt</button>
+            <button type="button">Highlight Biases</button>
           </footer>
         )}
       </div>
