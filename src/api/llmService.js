@@ -107,16 +107,29 @@ export const fetchGraphData = async (prompt) => {
  */
 export const fetchNodeExpansion = async (nodeId, limit = 3, expansionType = 'all') => {
   try {
-    // For development, use mock data based on expansion type
-    if (process.env.NODE_ENV === 'development' || true) { // Always use mock data for now
+    console.log(`Fetching expansion for node ${nodeId} with type ${expansionType}`);
+    
+    // For development fallback, when API is not available, use mock data
+    const useLocalMock = false; // Set to false to use the real API
+    
+    if (useLocalMock) {
+      console.log('Using mock data for node expansion');
       return getMockExpansionByType(nodeId, expansionType);
     }
     
+    // Construct the API endpoint with appropriate query parameters
     const endpoint = `/api/expand-node/${nodeId}?limit=${limit}&expansion_type=${expansionType}`;
     
+    console.log(`Calling API endpoint: ${endpoint}`);
     const response = await fetch(endpoint);
     
     if (!response.ok) {
+      // If server returns error, fall back to mock data for development
+      console.error(`Failed to expand node ${nodeId} with type ${expansionType}. Status: ${response.status}`);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Falling back to mock data');
+        return getMockExpansionByType(nodeId, expansionType);
+      }
       throw new Error(`Failed to expand node ${nodeId}`);
     }
     
@@ -130,6 +143,13 @@ export const fetchNodeExpansion = async (nodeId, limit = 3, expansionType = 'all
     return data;
   } catch (error) {
     console.error(`Error fetching expansion for node ${nodeId}:`, error);
+    
+    // In development, fallback to mock data on error
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Error occurred, falling back to mock data');
+      return getMockExpansionByType(nodeId, expansionType);
+    }
+    
     throw error;
   }
 };

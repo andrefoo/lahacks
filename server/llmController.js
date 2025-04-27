@@ -220,12 +220,126 @@ exports.expandNode = async (req, res) => {
       })
       .filter(Boolean);
 
+    // Define type-specific content based on expansion type
+    let typeSpecificPrompt;
+    let relationshipTypes;
+    let nodePrefix;
+    let nodeColor;
+    
+    // Configure expansion-specific settings
+    switch (expansionType) {
+      case 'theory':
+        typeSpecificPrompt = `
+          Focus EXCLUSIVELY on THEORETICAL aspects related to "${sourceNode.label}".
+          Generate nodes about:
+          - Theoretical frameworks and models
+          - Mathematical/logical foundations
+          - Scientific principles
+          - Academic theories
+          - Conceptual models and analyses
+          
+          Each node should be strictly theoretical in nature, focusing on how "${sourceNode.label}" 
+          is understood, modeled, or theoretically explained.
+        `;
+        relationshipTypes = [
+          "theorizes", "models", "explains", "formalizes", 
+          "describes", "defines", "conceptualizes"
+        ];
+        nodePrefix = id * 10000 + 100; // Ensures unique IDs for theory nodes (10101, 10102...)
+        nodeColor = "#e1f5fe"; // Light blue
+        break;
+        
+      case 'experiments':
+        typeSpecificPrompt = `
+          Focus EXCLUSIVELY on EXPERIMENTAL aspects related to "${sourceNode.label}".
+          Generate nodes about:
+          - Empirical evidence and experimental results
+          - Laboratory testing methods
+          - Field experiments and trials
+          - Experimental apparatus and methodologies
+          - Data gathering approaches
+          - Measurement techniques
+          
+          Each node should be strictly experimental in nature, focusing on how "${sourceNode.label}" 
+          is tested, measured, or empirically validated.
+        `;
+        relationshipTypes = [
+          "verifies", "tests", "measures", "validates", 
+          "experiments_with", "observes", "quantifies"
+        ];
+        nodePrefix = id * 10000 + 200; // Ensures unique IDs for experiment nodes (10201, 10202...)
+        nodeColor = "#e8f5e9"; // Light green
+        break;
+        
+      case 'philosophical':
+        typeSpecificPrompt = `
+          Focus EXCLUSIVELY on PHILOSOPHICAL aspects related to "${sourceNode.label}".
+          Generate nodes about:
+          - Ethical implications and considerations
+          - Epistemological questions (how we know about it)
+          - Metaphysical aspects
+          - Phenomenological perspectives
+          - Value-based analyses
+          - Existential questions raised
+          
+          Each node should be strictly philosophical in nature, focusing on fundamental questions, 
+          values, ethics, or meaning related to "${sourceNode.label}".
+        `;
+        relationshipTypes = [
+          "questions", "problematizes", "contemplates", "critiques", 
+          "examines", "challenges", "interprets"
+        ];
+        nodePrefix = id * 10000 + 300; // Ensures unique IDs for philosophical nodes (10301, 10302...)
+        nodeColor = "#fff8e1"; // Light yellow
+        break;
+        
+      case 'practical':
+        typeSpecificPrompt = `
+          Focus EXCLUSIVELY on PRACTICAL aspects related to "${sourceNode.label}".
+          Generate nodes about:
+          - Real-world applications and implementations
+          - Industrial or commercial uses
+          - Practical problems solved
+          - Policy implications and regulations
+          - Economic impacts
+          - Consumer products or services
+          
+          Each node should be strictly practical in nature, focusing on how "${sourceNode.label}" 
+          is actually used, implemented, or applied in real-world contexts.
+        `;
+        relationshipTypes = [
+          "implements", "applies", "utilizes", "deploys", 
+          "commercializes", "regulates", "operationalizes"
+        ];
+        nodePrefix = id * 10000 + 400; // Ensures unique IDs for practical nodes (10401, 10402...)
+        nodeColor = "#ffebee"; // Light red
+        break;
+        
+      default: // "all" or any other type
+        typeSpecificPrompt = `
+          Generate diverse nodes related to "${sourceNode.label}" covering various aspects 
+          including theoretical, practical, and conceptual elements.
+        `;
+        relationshipTypes = [
+          "is_a", "part_of", "related_to", "leads_to", 
+          "depends_on", "contradicts", "similar_to", "example_of"
+        ];
+        nodePrefix = id * 100 + 1; // Default ID generation (101, 102...)
+        nodeColor = null;
+        break;
+    }
+    
+    // Format relationship types for prompt
+    const relationshipTypesStr = relationshipTypes.map(t => `"${t}"`).join(", ");
+
     // Create system prompt for the LLM to generate connected nodes
     const systemPrompt = `
       You are an AI specialized in generating semantic network expansions for knowledge graphs.
       Generate ${limit} connected nodes for the concept: "${
       sourceNode.label
     }" (${sourceNode.description || "No description available"}).
+      
+      ${typeSpecificPrompt}
       
       The knowledge graph already contains the following nodes:
       ${JSON.stringify(existingNodeInfo, null, 2)}
@@ -237,15 +351,16 @@ exports.expandNode = async (req, res) => {
       Generate nodes that are semantically distinct from the existing ones.
       
       Each node should have:
-      - A unique id starting from ${id * 100 + 1}
+      - A unique id starting from ${nodePrefix}
       - A descriptive label (1-5 words)
       - A brief description (1-2 sentences)
-      - A node type (concept, entity, process, property, question, technology)
-      - Properties including importance (0-1) and domain
+      - A node type (${expansionType !== "all" ? `"${expansionType}"` : 'concept, entity, process, property, question, technology'})
+      - Properties including importance (0-1) and domain (set to "${expansionType}")
+      ${nodeColor ? `- A color property set to "${nodeColor}"` : ''}
       
       Also generate edges connecting these new nodes to the source node and to each other with:
       - Source and target node IDs
-      - A relationship type (is_a, part_of, related_to, leads_to, depends_on, contradicts, similar_to, example_of)
+      - A relationship type selected from [${relationshipTypesStr}]
       - A description explaining the relationship between the two nodes (1-2 sentences)
       - A weight value (0-1)
       - Whether it's bidirectional
@@ -253,21 +368,33 @@ exports.expandNode = async (req, res) => {
       Format your response as a valid JSON object with this structure:
       {
         "nodes": [
-          { "id": ${
-            id * 100 + 1
-          }, "label": "Related Node 1", "description": "Description", "type": "concept", "properties": { "importance": 0.8, "domain": "domain" } },
+          { 
+            "id": ${nodePrefix}, 
+            "label": "Related Node 1", 
+            "description": "Description", 
+            "type": "${expansionType !== "all" ? expansionType : "concept"}", 
+            "properties": { "importance": 0.8, "domain": "${expansionType}" }
+            ${nodeColor ? `, "color": "${nodeColor}"` : ''}
+          },
           ...
         ],
         "edges": [
-          { "source": ${id}, "target": ${
-      id * 100 + 1
-    }, "type": "is_a", "weight": 0.8, "bidirectional": false, "description": "Description of how these nodes relate" },
+          { 
+            "source": ${id}, 
+            "target": ${nodePrefix}, 
+            "type": "${relationshipTypes[0]}", 
+            "weight": 0.8, 
+            "bidirectional": false, 
+            "description": "Description of how these nodes relate" 
+          },
           ...
         ]
       }
     `;
 
     console.log("Making Gemini API request for node expansion...");
+    console.log(`Expansion type: ${expansionType}`);
+    
     // Call Google Gemini API
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
@@ -276,13 +403,13 @@ exports.expandNode = async (req, res) => {
           {
             parts: [
               { text: systemPrompt },
-              { text: `Generate connected nodes for the concept: "${sourceNode.label}"` }
+              { text: `Generate ${limit} connected ${expansionType} nodes for "${sourceNode.label}"` }
             ]
           }
         ],
         generationConfig: {
           temperature: 0.7,
-          maxOutputTokens: 1500,
+          maxOutputTokens: 2500,
         },
       },
       {
@@ -291,9 +418,7 @@ exports.expandNode = async (req, res) => {
         }
       }
     );
-
-    console.log("Received Gemini API response for node expansion");
-
+    
     // Parse the Gemini response
     let content;
     if (response.data?.candidates && response.data.candidates.length > 0) {
@@ -325,6 +450,12 @@ exports.expandNode = async (req, res) => {
         throw new Error("Invalid response structure");
       }
       
+      // Ensure each node has the expansion type set
+      parsed.nodes = parsed.nodes.map(node => ({
+        ...node,
+        expansionType: expansionType
+      }));
+      
       // Filter out duplicate nodes based on label or description similarity
       const filteredNodes = parsed.nodes.filter(newNode => {
         // Check if there's a node with the same ID (direct duplicate)
@@ -352,8 +483,9 @@ exports.expandNode = async (req, res) => {
       const finalNodes = filteredNodes.length > 0 ? filteredNodes : 
         parsed.nodes.map((node, index) => ({
           ...node,
-          id: id * 1000 + index + 1, // Use a larger multiplier to avoid conflicts
-          label: `${node.label} (Variant)` // Slightly modify label
+          id: nodePrefix + index, // Use appropriate prefix based on expansion type
+          label: `${node.label} (${expansionType})`, // Mark with expansion type
+          expansionType: expansionType // Ensure expansion type is set
         }));
       
       // Update edges to use the new node IDs if needed
@@ -380,6 +512,7 @@ exports.expandNode = async (req, res) => {
         },
         nodes: finalNodes,
         edges: finalEdges,
+        expansionType: expansionType
       };
       
       // Add expanded nodes to the memory store so they can be expanded later
