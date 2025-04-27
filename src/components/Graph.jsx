@@ -1,8 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { fetchNodeExpansion } from "../api/llmService";
-import {
-  calculateNodePositions
-} from "../utils/graphLayout";
+import { calculateNodePositions } from "../utils/graphLayout";
 import Node from "./Node";
 
 // Component for visualizing the knowledge graph
@@ -33,6 +31,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
 
   // Calculate positions when relevant dependencies change (but not nodes itself)
   useEffect(() => {
+    console.log("nodesRef.current", nodesRef.current);
     if (nodesRef.current.length > 0) {
       const positionedNodes = calculateNodePositions(
         nodesRef.current,
@@ -57,19 +56,19 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
   const handleNodeExpand = async (nodeId) => {
     // Set the expanded node ID immediately for UI feedback
     setExpandedNodeId(nodeId);
-    
+
     // Check if node is already expanded or is being expanded
     const nodeIsExpanded = nodes.some((n) => n.parentId === nodeId);
     if (nodeIsExpanded || isExpanding) {
       return;
     }
-    
+
     setIsExpanding(true);
-    
+
     try {
       // Fetch node expansion data from API
       const expansion = await fetchNodeExpansion(nodeId);
-      
+
       if (expansion?.nodes?.length) {
         // Add expanded nodes to the graph
         setNodes((prevNodes) => {
@@ -77,7 +76,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
             node.id === nodeId ? { ...node, expanded: true } : node
           );
           const existingIds = new Set(prevNodes.map((n) => n.id));
-          
+
           // Ensure all new nodes have valid labels
           const newNodes = expansion.nodes
             .filter((node) => !existingIds.has(node.id))
@@ -85,28 +84,32 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
               ...node,
               parentId: node.parentId ?? nodeId,
               // Ensure each node has a label
-              label: node.label || `Node ${node.id}`
+              label: node.label || `Node ${node.id}`,
             }));
-            
+
           return [...updatedNodes, ...newNodes];
         });
-        
+
         // Add new edges to the graph with enhanced information
         setEdges((prevEdges) => {
           // Ensure all new edges have proper descriptive properties
-          const enhancedEdges = expansion.edges.map(edge => {
+          const enhancedEdges = expansion.edges.map((edge) => {
             // Find source and target nodes to get their labels
-            const sourceNode = [...nodes, ...expansion.nodes].find(n => n.id === edge.source);
-            const targetNode = [...nodes, ...expansion.nodes].find(n => n.id === edge.target);
-            
+            const sourceNode = [...nodes, ...expansion.nodes].find(
+              (n) => n.id === edge.source
+            );
+            const targetNode = [...nodes, ...expansion.nodes].find(
+              (n) => n.id === edge.target
+            );
+
             return {
               ...edge,
               // Add source and target labels to the edge for better UI display
               sourceLabel: sourceNode?.label || `Node ${edge.source}`,
-              targetLabel: targetNode?.label || `Node ${edge.target}`
+              targetLabel: targetNode?.label || `Node ${edge.target}`,
             };
           });
-          
+
           return [...prevEdges, ...enhancedEdges];
         });
       }
@@ -127,7 +130,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
   const handleEdgeClick = (edge) => {
     const edgeId = `${edge.source}-${edge.target}`;
     setSelectedEdgeId(edgeId === selectedEdgeId ? null : edgeId);
-    
+
     if (onEdgeClick && edge) {
       onEdgeClick(edge);
     }
@@ -230,25 +233,27 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
           >
             <polygon points="0,0 10,5 0,10" className="edge-arrow" />
           </marker>
-          
+
           {/* Define clipPath for edge labels */}
           <clipPath id="edge-label-clip">
-            <text x="0" y="0" textAnchor="middle">dummy</text>
+            <text x="0" y="0" textAnchor="middle">
+              dummy
+            </text>
           </clipPath>
         </defs>
-        
+
         {/* Render edges */}
         <g className="edges">
           {edges.map((edge) => {
-            const source = nodes.find(n => n.id === edge.source);
-            const target = nodes.find(n => n.id === edge.target);
-            
+            const source = nodes.find((n) => n.id === edge.source);
+            const target = nodes.find((n) => n.id === edge.target);
+
             if (!source || !target) return null;
-            
+
             // Ensure source and target have valid labels
             const sourceLabel = source.label || `Node ${source.id}`;
             const targetLabel = target.label || `Node ${target.id}`;
-            
+
             // Use the same positioning logic as found elsewhere in the codebase
             // The nodes are positioned with their top-left at (x,y) and have radius of 20px
             const centerOffset = 20; // Node radius
@@ -256,34 +261,39 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
             const sourceY = (source.y || 0) + centerOffset;
             const targetX = (target.x || 0) + centerOffset;
             const targetY = (target.y || 0) + centerOffset;
-            
+
             // Calculate the midpoint for the arrow
             const midX = (sourceX + targetX) / 2;
             const midY = (sourceY + targetY) / 2;
-            
+
             // Calculate direction vector
             const dx = targetX - sourceX;
             const dy = targetY - sourceY;
-            
+
             // Label position - slightly offset from the midpoint
             const labelX = midX;
             const labelY = midY - 10; // Position above the arrow
-            
-            const isSelected = selectedEdgeId === `${edge.source}-${edge.target}`;
-            
+
+            const isSelected =
+              selectedEdgeId === `${edge.source}-${edge.target}`;
+
             // Create an enriched edge with source and target labels for the click handler
             const enrichedEdge = {
               ...edge,
               sourceLabel,
-              targetLabel
+              targetLabel,
             };
-            
+
             // Common click handler for all edge elements
             const handleEdgeElementClick = () => handleEdgeClick(enrichedEdge);
-            const handleEdgeKeyPress = (e) => e.key === "Enter" && handleEdgeClick(enrichedEdge);
-            
+            const handleEdgeKeyPress = (e) =>
+              e.key === "Enter" && handleEdgeClick(enrichedEdge);
+
             return (
-              <g key={`edge-${edge.source}-${edge.target}`} className={`edge ${edge.type} ${isSelected ? "selected" : ""}`}>
+              <g
+                key={`edge-${edge.source}-${edge.target}`}
+                className={`edge ${edge.type} ${isSelected ? "selected" : ""}`}
+              >
                 {!edge.bidirectional ? (
                   <>
                     {/* First half of the line (from source to midpoint) */}
@@ -298,7 +308,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                       tabIndex="0"
                       aria-label={`First half of edge from ${sourceLabel} to ${targetLabel}`}
                     />
-                    
+
                     {/* Second half of the line (from midpoint to target), with arrow */}
                     <line
                       x1={midX}
@@ -320,17 +330,19 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                     y1={sourceY}
                     x2={targetX}
                     y2={targetY}
-                    className={`graph-edge bidirectional ${isSelected ? "selected" : ""}`}
+                    className={`graph-edge bidirectional ${
+                      isSelected ? "selected" : ""
+                    }`}
                     onClick={handleEdgeElementClick}
                     onKeyPress={handleEdgeKeyPress}
                     tabIndex="0"
                     aria-label={`Bidirectional edge between ${sourceLabel} and ${targetLabel}`}
                   />
                 )}
-                
+
                 {/* Edge type label with improved clickability */}
                 {edge.type && (
-                  <g 
+                  <g
                     className="edge-label-container"
                     onClick={handleEdgeElementClick}
                     onKeyPress={handleEdgeKeyPress}
@@ -357,13 +369,18 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
             );
           })}
         </g>
-        
+
         {/* Render cluster labels */}
         {renderClusters()}
 
         {/* Modified node rendering */}
         {nodes.map((node) => (
-          <g key={`node-${node.id}`} className={isExpanding && node.id === expandedNodeId ? 'loading' : ''}>
+          <g
+            key={`node-${node.id}`}
+            className={
+              isExpanding && node.id === expandedNodeId ? "loading" : ""
+            }
+          >
             <Node
               node={node}
               onClick={handleNodeClick}
@@ -384,13 +401,20 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                 className="expand-button"
                 transform={`translate(${node.x + 20}, ${node.y - 20})`}
                 onClick={(e) => handleExpandClick(node.id, e)}
-                onKeyPress={(e) => e.key === 'Enter' && handleExpandClick(node.id, e)}
+                onKeyPress={(e) =>
+                  e.key === "Enter" && handleExpandClick(node.id, e)
+                }
                 tabIndex="0"
                 aria-label={`Expand node ${node.label}`}
                 role="button"
               >
                 <circle r="8" fill="#ffffff" stroke="#666666" strokeWidth="1" />
-                <text textAnchor="middle" dy=".3em" fontSize="12" fill="#666666">
+                <text
+                  textAnchor="middle"
+                  dy=".3em"
+                  fontSize="12"
+                  fill="#666666"
+                >
                   +
                 </text>
               </g>
