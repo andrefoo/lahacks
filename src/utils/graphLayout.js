@@ -7,9 +7,10 @@
  */
 export const calculateNodePositions = (
   nodes,
-  expandedNodeId = null,
+  expandedNodes = [],
   clusters = [],
-  activeCluster = null
+  activeCluster = null,
+  forceExpandedSpacing = false
 ) => {
   // Define center and radius for the main circle of nodes
   const centerX = window.innerWidth / 2;
@@ -39,7 +40,7 @@ export const calculateNodePositions = (
             ...node,
             x: centerX + radius * 0.8 * Math.cos(angle),
             y: centerY + radius * 0.8 * Math.sin(angle),
-            radius: expandedNodeId && node.id === expandedNodeId ? 30 : undefined
+            radius: expandedNodes.includes(node.id) ? 30 : undefined
           };
         }
       }
@@ -48,7 +49,7 @@ export const calculateNodePositions = (
         ...node, 
         x, 
         y, 
-        radius: expandedNodeId && node.id === expandedNodeId ? 30 : undefined
+        radius: expandedNodes.includes(node.id) ? 30 : undefined
       };
     }
     // For child nodes, position them based on parent ID
@@ -92,8 +93,11 @@ export const calculateNodePositions = (
         
         // Use different radius based on whether parent is expanded and number of siblings
         // Dynamically increase radius for nodes with many children
+        // Also use expanded spacing if forcibly requested
         const childCount = siblings.length;
-        const childRadius = (parentId === expandedNodeId || totalChildren > 0) ? 
+        const isParentExpanded = expandedNodes.includes(parentId);
+        
+        const childRadius = (isParentExpanded || node.expanded || forceExpandedSpacing) ? 
           Math.max(180, 160 + childCount * 10) : 
           Math.max(120, 100 + childCount * 8);
         
@@ -107,6 +111,44 @@ export const calculateNodePositions = (
       return { ...node, x: centerX, y: centerY };
     }
   });
+};
+
+/**
+ * Redistribute nodes with even spacing to clean up the graph layout
+ * Resets node positions with greater spacing to avoid overlap
+ */
+export const redistributeNodes = (nodes, clusters = [], activeCluster = null) => {
+  // Preserve existing expanded states while ensuring consistent spacing
+  const resetNodes = nodes.map(node => ({
+    ...node,
+    // Keep expanded state if already set to true
+    expanded: node.expanded === true ? true : true
+  }));
+  
+  // Group nodes by parent-child relationships for better organization
+  const parentChildMap = {};
+  resetNodes.forEach(node => {
+    if (node.parentId) {
+      if (!parentChildMap[node.parentId]) {
+        parentChildMap[node.parentId] = [];
+      }
+      parentChildMap[node.parentId].push(node.id);
+    }
+  });
+  
+  // Get all parent node IDs that have children
+  const parentIds = Object.keys(parentChildMap).map(id => parseInt(id));
+  
+  // Find all nodes that were already expanded
+  const previouslyExpandedNodes = nodes
+    .filter(node => node.expanded)
+    .map(node => node.id);
+  
+  // Combine parent IDs and previously expanded nodes
+  const expandedNodesList = [...new Set([...parentIds, ...previouslyExpandedNodes])];
+  
+  // Calculate new positions with forced expanded spacing
+  return calculateNodePositions(resetNodes, expandedNodesList, clusters, activeCluster, true);
 };
 
 /**

@@ -5,6 +5,7 @@ import Graph from './components/Graph';
 import PromptInput from './components/PromptInput';
 import Sidebar from './components/Sidebar';
 import StarTrail from './components/StarTrail';
+import { redistributeNodes } from './utils/graphLayout';
 
 // Main App component
 // Manages application state and coordinates between components
@@ -172,6 +173,27 @@ function App() {
     setTransform({ x: 0, y: 0, scale: 0.8 });
   };
 
+  // Reset layout to evenly space all nodes
+  const resetLayout = () => {
+    if (!graphData || !graphData.nodes || graphData.nodes.length === 0) return;
+    
+    // Use our redistributeNodes function to recalculate positions
+    const redistributedNodes = redistributeNodes(
+      graphData.nodes, 
+      graphData.clusters || [],
+      null
+    );
+    
+    // Update the graph data with new node positions
+    setGraphData({
+      ...graphData,
+      nodes: redistributedNodes
+    });
+    
+    // Reset zoom to see the entire graph
+    fitToScreen();
+  };
+
   // Add wheel event listener
   useEffect(() => {
     if (isGenerated && graphContainerRef.current) {
@@ -292,14 +314,96 @@ function App() {
                 />
               </div>
               
-              <div className="graph-controls">
-                <button type="button" onClick={resetView} title="Reset View">
+              <div className="graph-controls" style={{
+                position: 'fixed',
+                bottom: '20px',
+                right: '20px',
+                display: 'flex',
+                gap: '10px',
+                background: 'rgba(30, 41, 59, 0.85)',
+                padding: '10px',
+                borderRadius: '8px',
+                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+                zIndex: 1000
+              }}>
+                <button 
+                  type="button" 
+                  onClick={resetView} 
+                  title="Reset View"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    background: 'rgba(51, 65, 85, 0.7)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    color: '#e2e8f0',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(71, 85, 105, 0.9)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'rgba(51, 65, 85, 0.7)'}
+                >
                   <span>🔄</span>
                 </button>
-                <button type="button" onClick={fitToScreen} title="Fit to Screen">
+                <button 
+                  type="button" 
+                  onClick={fitToScreen} 
+                  title="Fit to Screen"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    background: 'rgba(51, 65, 85, 0.7)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    color: '#e2e8f0',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(71, 85, 105, 0.9)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'rgba(51, 65, 85, 0.7)'}
+                >
                   <span>🔍</span>
                 </button>
-                <div className="zoom-level">
+                <button 
+                  type="button" 
+                  onClick={resetLayout} 
+                  title="Reset Layout (Reorganize Nodes)"
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    borderRadius: '4px',
+                    border: 'none',
+                    background: 'rgba(51, 65, 85, 0.7)',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '18px',
+                    color: '#e2e8f0',
+                    transition: 'background 0.2s ease'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.background = 'rgba(71, 85, 105, 0.9)'}
+                  onMouseOut={(e) => e.currentTarget.style.background = 'rgba(51, 65, 85, 0.7)'}
+                >
+                  <span>📏</span>
+                </button>
+                <div className="zoom-level" style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  minWidth: '60px',
+                  padding: '0 10px',
+                  fontWeight: 'bold',
+                  color: '#e2e8f0'
+                }}>
                   {Math.round(transform.scale * 100)}%
                 </div>
               </div>
@@ -318,9 +422,53 @@ function App() {
 
         {/* Footer with controls */}
         {isGenerated && (
-          <footer className="app-footer">
-            <button type="button" onClick={handleReset}>New Prompt</button>
-            <button type="button">Highlight Biases</button>
+          <footer className="app-footer" style={{
+            position: 'fixed',
+            bottom: '20px',
+            left: '20px',
+            display: 'flex',
+            gap: '10px',
+            background: 'rgba(30, 41, 59, 0.85)',
+            padding: '10px',
+            borderRadius: '8px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.3)',
+            zIndex: 1000
+          }}>
+            <button 
+              type="button" 
+              onClick={handleReset}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '4px',
+                border: 'none',
+                background: 'rgba(51, 65, 85, 0.7)',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                color: '#e2e8f0',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(71, 85, 105, 0.9)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(51, 65, 85, 0.7)'}
+            >
+              New Prompt
+            </button>
+            <button 
+              type="button"
+              style={{
+                padding: '8px 16px',
+                borderRadius: '4px',
+                border: 'none',
+                background: 'rgba(51, 65, 85, 0.7)',
+                cursor: 'pointer',
+                fontWeight: 'bold',
+                color: '#e2e8f0',
+                transition: 'background 0.2s ease'
+              }}
+              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(71, 85, 105, 0.9)'}
+              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(51, 65, 85, 0.7)'}
+            >
+              Highlight Biases
+            </button>
           </footer>
         )}
       </div>

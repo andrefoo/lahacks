@@ -35,7 +35,7 @@ exports.generateGraph = async (req, res) => {
       Each node should have:
       - A unique id (1-10)
       - A descriptive label (1-5 words)
-      - A brief description (1-2 sentences)
+      - An extensive description (1-2 sentences)
       - A type (concept, entity, process, property, question, technology)
       - Properties including importance (0-1) and domain
       

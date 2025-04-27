@@ -6,7 +6,8 @@ import Node from "./Node";
 // Component for visualizing the knowledge graph
 // Renders nodes and edges with interactive capabilities
 const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
-  const [expandedNodeId, setExpandedNodeId] = useState(null);
+  const [expandedNodes, setExpandedNodes] = useState([]);
+  const [currentExpandingNodeId, setCurrentExpandingNodeId] = useState(null);
   const [nodes, setNodes] = useState([]);
   const [edges, setEdges] = useState([]);
   const [clusters, setClusters] = useState([]);
@@ -21,9 +22,28 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
   // Initialize graph with data from props
   useEffect(() => {
     if (graphData) {
-      setNodes(graphData.nodes || []);
+      // Preserve the expanded state when updating nodes
+      setNodes(prevNodes => {
+        // Map existing expanded states to node IDs
+        const expandedStates = new Map();
+        prevNodes.forEach(node => {
+          if (node.expanded) {
+            expandedStates.set(node.id, true);
+          }
+        });
+        
+        // Apply expanded state to new nodes where applicable
+        return (graphData.nodes || []).map(node => ({
+          ...node,
+          expanded: expandedStates.has(node.id) ? true : node.expanded || false
+        }));
+      });
+      
       setEdges(graphData.edges || []);
       setClusters(graphData.clusters || []);
+      
+      // Don't reset expanded nodes list when reloading graph
+      // Only reset if explicitly requested by a state reset action
     }
   }, [graphData]);
 
@@ -38,7 +58,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
     if (nodesRef.current.length > 0) {
       const positionedNodes = calculateNodePositions(
         nodesRef.current,
-        expandedNodeId,
+        expandedNodes,
         clusters,
         activeCluster
       );
@@ -53,7 +73,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
         setNodes(positionedNodes);
       }
     }
-  }, [nodes, expandedNodeId, clusters, activeCluster]);
+  }, [nodes, expandedNodes, clusters, activeCluster]);
 
   // New handler for expand button click that accepts expansion type
   const handleExpandClick = (nodeId, expansionType, event) => {
@@ -78,8 +98,13 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
 
   // Modified node expansion to handle expansion types
   const handleNodeExpand = async (nodeId, expansionType = "all") => {
-    // Set the expanded node ID immediately for UI feedback
-    setExpandedNodeId(nodeId);
+    // Keep track of current expanding node for visual feedback
+    setCurrentExpandingNodeId(nodeId);
+    
+    // Add this node to the expandedNodes array if not already there
+    if (!expandedNodes.includes(nodeId)) {
+      setExpandedNodes(prev => [...prev, nodeId]);
+    }
 
     // Check if node is already expanded or is being expanded
     const nodeIsExpanded = nodes.some((n) => n.parentId === nodeId);
@@ -143,6 +168,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
       console.error("Error expanding node:", error);
     } finally {
       setIsExpanding(false);
+      setCurrentExpandingNodeId(null);
     }
   };
 
@@ -388,7 +414,7 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
             key={`node-${node.id}`}
             
             className={
-              `graph-node-container ${isExpanding && node.id === expandedNodeId ? "loading" : ""
+              `graph-node-container ${isExpanding && node.id === currentExpandingNodeId ? "loading" : ""
             }
           `}
             onMouseEnter={() => {
@@ -410,8 +436,8 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
             <Node
               node={node}
               onClick={handleNodeClick}
-              isExpanded={node.id === expandedNodeId}
-              isLoading={isExpanding && node.id === expandedNodeId}
+              isExpanded={expandedNodes.includes(node.id)}
+              isLoading={isExpanding && node.id === currentExpandingNodeId}
               isInActiveCluster={
                 activeCluster
                   ? clusters
