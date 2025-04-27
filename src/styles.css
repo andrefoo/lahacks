@@ -634,3 +634,121 @@ button {
   fill: white;
   font-weight: bold;
 }
+
+/* Expansion menu styles */
+.expand-options-container {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* Show expansion container when specifically told to show via class */
+.expand-options-container.show-menu {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Also show when hovering over associated node */
+.graph-node:hover + .expand-options-container {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Main menu button appearance */
+.expansion-menu {
+  cursor: pointer;
+}
+
+/* Hide expansion options by default */
+.expansion-options {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  transform: scale(0.8);
+}
+
+/* Show options when container has show-menu class */
+.expand-options-container.show-menu .expansion-options {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+/* Also show options when hovering over menu */
+.expansion-menu:hover .expansion-options {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+/* Individual option styling */
+.expansion-option {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.expansion-option:hover {
+  transform: scale(1.2) !important;
+}
+
+.expansion-option text {
+  pointer-events: none;
+}
+
+/* Option colors */
+.theory-option circle {
+  fill: #e1f5fe;
+}
+
+.experiments-option circle {
+  fill: #e8f5e9;
+}
+
+.philosophical-option circle {
+  fill: #fff8e1;
+}
+
+.practical-option circle {
+  fill: #ffebee;
+}
+
+/* Node expansion type styles */
+.expansion-type-badge {
+  fill: #666666;
+  font-size: 8px;
+  font-style: italic;
+}
+
+/* Expansion type specific node styles */
+.expansion-theory .node-circle {
+  stroke: #81d4fa; /* Darker shade of the fill */
+}
+
+.expansion-experiments .node-circle {
+  stroke: #81c784; /* Darker shade of the fill */
+}
+
+.expansion-philosophical .node-circle {
+  stroke: #ffd54f; /* Darker shade of the fill */
+}
+
+.expansion-practical .node-circle {
+  stroke: #ef9a9a; /* Darker shade of the fill */
+}
+
+/* Enhance visibility of node connection based on type */
+.expansion-theory text.node-type-label {
+  fill: #0288d1;
+}
+
+.expansion-experiments text.node-type-label {
+  fill: #2e7d32;
+}
+
+.expansion-philosophical text.node-type-label {
+  fill: #f57f17;
+}
+
+.expansion-practical text.node-type-label {
+  fill: #c62828;
+}

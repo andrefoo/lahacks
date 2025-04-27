@@ -102,11 +102,16 @@ export const fetchGraphData = async (prompt) => {
  * Fetch expanded node data for a specific node
  * @param {number} nodeId - ID of the node to expand
  * @param {number} limit - Maximum number of connected nodes to return
- * @param {string} expansionType - Type of expansion (children, related, all)
+ * @param {string} expansionType - Type of expansion (theory, experiments, philosophical, practical, all)
  * @returns {Object} - Object containing nodes and edges connected to the source node
  */
 export const fetchNodeExpansion = async (nodeId, limit = 3, expansionType = 'all') => {
   try {
+    // For development, use mock data based on expansion type
+    if (process.env.NODE_ENV === 'development' || true) { // Always use mock data for now
+      return getMockExpansionByType(nodeId, expansionType);
+    }
+    
     const endpoint = `/api/expand-node/${nodeId}?limit=${limit}&expansion_type=${expansionType}`;
     
     const response = await fetch(endpoint);
@@ -127,6 +132,108 @@ export const fetchNodeExpansion = async (nodeId, limit = 3, expansionType = 'all
     console.error(`Error fetching expansion for node ${nodeId}:`, error);
     throw error;
   }
+};
+
+/**
+ * Generate mock expansion data based on expansion type
+ * @param {number|string} nodeId - ID of the node to expand
+ * @param {string} expansionType - Type of expansion (theory, experiments, philosophical, practical, all)
+ * @returns {Object} - Mock expansion data with nodes and edges
+ */
+const getMockExpansionByType = (nodeId, expansionType) => {
+  // Get the existing expansion if available
+  const existingExpansion = nodeExpansions[nodeId];
+  
+  if (expansionType === 'all' && existingExpansion) {
+    return existingExpansion;
+  }
+  
+  // Create ID prefixes for different expansion types to ensure unique IDs
+  const typeInfo = {
+    'theory': {
+      prefix: 'T',
+      nodeIds: [10101, 10102, 10103],
+      labels: ['Theoretical Framework', 'Mathematical Models', 'Conceptual Analysis'],
+      color: '#e1f5fe',
+      relationType: 'theorizes'
+    },
+    'experiments': {
+      prefix: 'E',
+      nodeIds: [10201, 10202, 10203],
+      labels: ['Empirical Evidence', 'Laboratory Tests', 'Field Experiments'],
+      color: '#e8f5e9',
+      relationType: 'verifies'
+    },
+    'philosophical': {
+      prefix: 'P',
+      nodeIds: [10301, 10302, 10303],
+      labels: ['Ethical Implications', 'Epistemological Questions', 'Phenomenological Perspective'],
+      color: '#fff8e1',
+      relationType: 'questions'
+    },
+    'practical': {
+      prefix: 'A',
+      nodeIds: [10401, 10402, 10403],
+      labels: ['Industrial Applications', 'Consumer Products', 'Policy Recommendations'],
+      color: '#ffebee',
+      relationType: 'implements'
+    },
+    'all': {
+      prefix: 'X',
+      nodeIds: [101, 102, 103],
+      labels: ['Related Concept 1', 'Related Concept 2', 'Related Concept 3'],
+      color: '#f5f5f5',
+      relationType: 'related_to'
+    }
+  };
+  
+  // Get the specific type info or default to 'all'
+  const { prefix, nodeIds, labels, color, relationType } = typeInfo[expansionType] || typeInfo.all;
+  
+  // Generate nodes based on expansion type
+  const nodes = nodeIds.map((id, index) => ({
+    id,
+    label: labels[index],
+    description: `${expansionType.charAt(0).toUpperCase() + expansionType.slice(1)}-related expansion of node ${nodeId}.`,
+    type: expansionType,
+    properties: { importance: 0.7 - (index * 0.1), domain: expansionType },
+    hasBias: index === 0 ? Math.random() > 0.7 : false, // Random chance for first node to have bias
+    biasType: index === 0 && Math.random() > 0.7 ? "Confirmation Bias" : null,
+    biasDescription: index === 0 && Math.random() > 0.7 ? "Favoring information that confirms existing beliefs." : null,
+    color
+  }));
+  
+  // Generate edges
+  const edges = nodeIds.map(id => ({
+    source: nodeId,
+    target: id,
+    type: relationType,
+    weight: 0.7,
+    bidirectional: Math.random() > 0.7 // Random chance to be bidirectional
+  }));
+  
+  // Add some edges between the new nodes
+  if (nodes.length > 1) {
+    edges.push({
+      source: nodeIds[0],
+      target: nodeIds[1],
+      type: "relates_to",
+      weight: 0.6,
+      bidirectional: false
+    });
+  }
+  
+  if (nodes.length > 2) {
+    edges.push({
+      source: nodeIds[1],
+      target: nodeIds[2],
+      type: "influences",
+      weight: 0.5,
+      bidirectional: true
+    });
+  }
+  
+  return { nodes, edges };
 };
 
 /**
