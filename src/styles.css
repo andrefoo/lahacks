@@ -630,11 +630,6 @@ button {
   text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
 }
 
-.edge-label.selected {
-  fill: white;
-  font-weight: bold;
-}
-
 /* Expansion menu styles */
 .expand-options-container {
   opacity: 0;
@@ -665,6 +660,8 @@ button {
   pointer-events: none;
   transition: opacity 0.3s, transform 0.3s;
   transform: scale(0.8);
+  width: 100%;
+  height: 100%;
 }
 
 /* Show options when container has show-menu class */
@@ -674,42 +671,24 @@ button {
   transform: scale(1);
 }
 
-/* Also show options when hovering over menu */
-.expansion-menu:hover .expansion-options {
-  opacity: 1;
-  pointer-events: auto;
-  transform: scale(1);
-}
-
 /* Individual option styling */
 .expansion-option {
   cursor: pointer;
   transition: transform 0.2s;
-}
-
-.expansion-option:hover {
-  transform: scale(1.2) !important;
+  position: relative; /* Added to support tooltip positioning */
 }
 
 .expansion-option text {
-  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: central;  /* Added for vertical centering */
+  font-size: 12px;  /* Increased from 8px */
 }
 
-/* Option colors */
-.theory-option circle {
-  fill: #e1f5fe;
-}
-
-.experiments-option circle {
-  fill: #e8f5e9;
-}
-
-.philosophical-option circle {
-  fill: #fff8e1;
-}
-
-.practical-option circle {
-  fill: #ffebee;
+.expansion-menu text {
+  text-anchor: middle;
+  dominant-baseline: central;  /* Added for vertical centering */
+  font-size: 12px;  /* Increased from 10px */
+  fill: #666666;
 }
 
 /* Node expansion type styles */
@@ -736,19 +715,94 @@ button {
   stroke: #ef9a9a; /* Darker shade of the fill */
 }
 
-/* Enhance visibility of node connection based on type */
-.expansion-theory text.node-type-label {
-  fill: #0288d1;
+/* Extracted styles from Graph.jsx */
+.graph-node-container {
+  transition: all 0.3s ease;
 }
 
-.expansion-experiments text.node-type-label {
-  fill: #2e7d32;
+.graph-node-container.loading {
+  opacity: 0.7;
 }
 
-.expansion-philosophical text.node-type-label {
-  fill: #f57f17;
+.cluster-label {
+  cursor: pointer;
 }
 
-.expansion-practical text.node-type-label {
-  fill: #c62828;
+.cluster-label.active {
+  font-weight: bold;
+}
+
+.cluster-label text {
+  text-anchor: middle;
+  font-weight: bold;
+}
+
+.edge-label-container {
+  cursor: pointer;
+}
+
+.expand-options-container foreignObject {
+  overflow: visible;
+}
+
+/* Primary expand button styling */
+.expansion-menu circle {
+  r: 10;
+  fill: var(--secondary);
+}
+
+.expansion-menu text {
+  text-anchor: middle;
+  font-size: 10px;
+  fill: var(--primary);
+}
+
+/* Expansion option styling */
+.expansion-option circle {
+  r: 15;
+  fill: var(--secondary);
+}
+
+.theory-option {
+  transform: translate(-40px, 0);
+}
+
+.experiments-option {
+  transform: translate(-20px, -30px);
+}
+
+.philosophical-option {
+  transform: translate(20px, -30px); 
+}
+
+.practical-option {
+  transform: translate(40px, 0);
+}
+
+/* Accessibility button styles */
+.graph-node-container button {
+  background: none;
+  border: none;
+  padding: 0;
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Added missing styles */
+.cluster-foreign-object {
+  overflow: visible;
+}
+
+.edge-label.selected {
+  font-size: 8px;
+  font-weight: bold;
+  fill: white;
+}
+
+.edge-label:not(.selected) {
+  font-size: 8px;
+  font-weight: normal;
 }

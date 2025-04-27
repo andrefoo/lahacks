@@ -15,8 +15,9 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
   const [isExpanding, setIsExpanding] = useState(false);
   const [activeCluster, setActiveCluster] = useState(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
-  const [hoverNodeId, setHoverNodeId] = useState(null);  // Track which node's menu is being hovered
-  const hoverTimeoutRef = useRef(null); // Ref to store timeout ID
+  const [hoverNodeId, setHoverNodeId] = useState(null);
+  const hoverTimeoutRef = useRef(null);
+  const menuRef = useRef(null);
   const nodesRef = useRef(nodes);
 
   // Initialize graph with data from props
@@ -58,7 +59,21 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
   // New handler for expand button click that accepts expansion type
   const handleExpandClick = (nodeId, expansionType, event) => {
     // Prevent the click from triggering the node click handler
-    event.stopPropagation();
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    
+    // Add console logging to debug
+    console.log(`Expanding node ${nodeId} with type: ${expansionType}`);
+    
+    // Clear hover state
+    setHoverNodeId(null);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    
     handleNodeExpand(nodeId, expansionType);
   };
 
@@ -186,19 +201,10 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
           aria-pressed={activeCluster === cluster.id ? "true" : "false"}
           aria-label={`Cluster: ${cluster.label}`}
         >
-          <foreignObject width="1" height="1" style={{ overflow: "visible" }}>
+          <foreignObject width="1" height="1" className="cluster-foreign-object">
             <button
               type="button"
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                width: "1px",
-                height: "1px",
-                position: "absolute",
-                opacity: 0,
-                pointerEvents: "none",
-              }}
+              className="graph-node-container button"
               aria-pressed={activeCluster === cluster.id ? "true" : "false"}
               aria-label={`Cluster: ${cluster.label}`}
             />
@@ -220,7 +226,6 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
         height="100%"
         aria-label="Knowledge graph visualization"
       >
-        <title>Interactive Knowledge Graph Visualization</title>
         <defs>
           {/* Define marker for directed edges */}
           <marker
@@ -352,7 +357,6 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                       y={labelY}
                       textAnchor="middle"
                       className={`edge-label ${isSelected ? "selected" : ""}`}
-                      fontSize={isSelected ? "10" : "8"}
                       fontWeight={isSelected ? "bold" : "normal"}
                     >
                       {edge.type.replace(/_/g, " ")}
@@ -373,11 +377,20 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
           <g 
             key={`node-${node.id}`} 
             className={`graph-node-container ${isExpanding && node.id === expandedNodeId ? 'loading' : ''}`}
-            onMouseEnter={() => setHoverNodeId(node.id)}
+            onMouseEnter={() => {
+              if (hoverTimeoutRef.current) {
+                clearTimeout(hoverTimeoutRef.current);
+                hoverTimeoutRef.current = null;
+              }
+              setHoverNodeId(node.id);
+            }}
             onMouseLeave={() => {
               hoverTimeoutRef.current = setTimeout(() => {
-                setHoverNodeId(null);
-              }, 500);
+                // Only hide the menu if we're not hovering over it
+                if (!menuRef.current || !menuRef.current.matches(':hover')) {
+                  setHoverNodeId(null);
+                }
+              }, 300); // Reduced from 500ms for better responsiveness
             }}
           >
             <Node
@@ -399,21 +412,19 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
               <g
                 className={`expand-options-container ${hoverNodeId === node.id ? 'show-menu' : ''}`}
                 transform={`translate(${node.x + 20}, ${node.y - 20})`}
+                ref={menuRef}
+                onMouseEnter={() => {
+                  // Clear any pending timeouts when entering the menu
+                  if (hoverTimeoutRef.current) {
+                    clearTimeout(hoverTimeoutRef.current);
+                    hoverTimeoutRef.current = null;
+                  }
+                }}
               >
                 {/* Primary expand button */}
                 <g className="expansion-menu">
-                  <circle
-                    r="10"
-                    fill="#ffffff"
-                    stroke="#666666"
-                    strokeWidth="1"
-                  />
-                  <text
-                    textAnchor="middle"
-                    dy=".3em"
-                    fontSize="10"
-                    fill="#666666"
-                  >
+                  <circle />
+                  <text>
                     +
                   </text>
                   
@@ -422,23 +433,15 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                     {/* Theory option */}
                     <g
                       className="expansion-option theory-option"
-                      onClick={(e) => handleExpandClick(node.id, "theory", e)}
-                      onKeyPress={(e) => e.key === "Enter" && handleExpandClick(node.id, "theory", e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExpandClick(node.id, "theory", e);
+                      }}
                       tabIndex="0"
                       aria-label={`Expand node ${node.label} with theory`}
-                      transform="translate(-30, 0)"
                     >
-                      <circle
-                        r="8"
-                        fill="#e1f5fe"
-                        stroke="#666666"
-                        strokeWidth="1"
-                      />
-                      <text
-                        textAnchor="middle"
-                        dy=".3em"
-                        fontSize="8"
-                      >
+                      <circle />
+                      <text>
                         📚
                       </text>
                     </g>
@@ -446,23 +449,15 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                     {/* Experiments option */}
                     <g
                       className="expansion-option experiments-option"
-                      onClick={(e) => handleExpandClick(node.id, "experiments", e)}
-                      onKeyPress={(e) => e.key === "Enter" && handleExpandClick(node.id, "experiments", e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExpandClick(node.id, "experiments", e);
+                      }}
                       tabIndex="0"
                       aria-label={`Expand node ${node.label} with experiments`}
-                      transform="translate(-15, -25)"
                     >
-                      <circle
-                        r="8"
-                        fill="#e8f5e9"
-                        stroke="#666666"
-                        strokeWidth="1"
-                      />
-                      <text
-                        textAnchor="middle"
-                        dy=".3em"
-                        fontSize="8"
-                      >
+                      <circle />
+                      <text>
                         🧪
                       </text>
                     </g>
@@ -470,23 +465,15 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                     {/* Philosophical questions option */}
                     <g
                       className="expansion-option philosophical-option"
-                      onClick={(e) => handleExpandClick(node.id, "philosophical", e)}
-                      onKeyPress={(e) => e.key === "Enter" && handleExpandClick(node.id, "philosophical", e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExpandClick(node.id, "philosophical", e);
+                      }}
                       tabIndex="0"
                       aria-label={`Expand node ${node.label} with philosophical questions`}
-                      transform="translate(15, -25)"
                     >
-                      <circle
-                        r="8"
-                        fill="#fff8e1"
-                        stroke="#666666"
-                        strokeWidth="1"
-                      />
-                      <text
-                        textAnchor="middle"
-                        dy=".3em"
-                        fontSize="8"
-                      >
+                      <circle />
+                      <text>
                         🤔
                       </text>
                     </g>
@@ -494,23 +481,15 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                     {/* Practical uses option */}
                     <g
                       className="expansion-option practical-option"
-                      onClick={(e) => handleExpandClick(node.id, "practical", e)}
-                      onKeyPress={(e) => e.key === "Enter" && handleExpandClick(node.id, "practical", e)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExpandClick(node.id, "practical", e);
+                      }}
                       tabIndex="0"
                       aria-label={`Expand node ${node.label} with practical uses`}
-                      transform="translate(30, 0)"
                     >
-                      <circle
-                        r="8"
-                        fill="#ffebee"
-                        stroke="#666666"
-                        strokeWidth="1"
-                      />
-                      <text
-                        textAnchor="middle"
-                        dy=".3em"
-                        fontSize="8"
-                      >
+                      <circle />
+                      <text>
                         🛠️
                       </text>
                     </g>
