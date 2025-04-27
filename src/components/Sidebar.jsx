@@ -52,6 +52,14 @@ const Sidebar = ({ node, edge, onClose }) => {
             <p className="section-text">{node.description}</p>
           </div>
           
+          {/* Fun Fact section - only shown if node has a fun fact */}
+          {node.funFact && (
+            <div className="sidebar-section fun-fact-section">
+              <h3 className="section-title">Fun Fact</h3>
+              <p className="section-text fun-fact-text">{node.funFact}</p>
+            </div>
+          )}
+          
           {/* Bias information section - only shown if node has bias */}
           {node.hasBias && (
             <div className="bias-section">

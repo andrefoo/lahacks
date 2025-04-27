@@ -498,9 +498,31 @@ button {
 }
 
 .section-text {
-  font-size: 0.875rem;
   line-height: 1.5;
-  background-color: transparent;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.fun-fact-section {
+  background-color: rgba(201, 181, 255, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 8px;
+  margin-bottom: 12px;
+  border-left: 3px solid var(--accent);
+}
+
+.fun-fact-text {
+  font-style: italic;
+  position: relative;
+  padding-left: 20px;
+}
+
+.fun-fact-text::before {
+  content: "💡";
+  position: absolute;
+  left: 0;
+  top: 0;
 }
 
 .bias-symbol {
