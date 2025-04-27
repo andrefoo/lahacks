@@ -64,23 +64,39 @@ export const calculateNodePositions = (
         const sectorId = (parentIdNum % 10) || 10; // If remainder is 0, use 10
         
         // Calculate the angle range for this parent (each parent gets 36 degrees)
-        const startDegree = (sectorId - 1) * 36;
-        const endDegree = sectorId * 36;
-        
-        // Find siblings (nodes with the same parent)
+        // Increase the sector size for parents with expanded nodes or many children
         const siblings = nodes.filter(n => n.parentId === parentId);
-        const siblingIndex = siblings.findIndex(s => s.id === node.id);
         const totalChildren = siblings.length;
         
-        // Distribute children evenly within the parent's assigned angle range
-        const degreeStep = (endDegree - startDegree) / (totalChildren || 1);
-        const angleDegrees = startDegree + (siblingIndex * degreeStep);
+        // Dynamically allocate more degrees for parents with more children
+        // Base sector is 36 degrees, but expand based on child count
+        const sectorSize = Math.min(72, 36 + totalChildren * 3); // Cap at 72 degrees (2x default)
+        const startDegree = (sectorId - 1) * 36;
+        const endDegree = startDegree + sectorSize;
+        
+        const siblingIndex = siblings.findIndex(s => s.id === node.id);
+        
+        // Add spacing factor to increase angle between siblings
+        const angleSpacing = 2.0; // Multiplier for angular spacing between nodes
+        const degreeStep = (endDegree - startDegree) / (totalChildren || 1) * angleSpacing;
+        
+        // Center the children within the expanded sector
+        const sectorCenter = startDegree + sectorSize / 2;
+        const halfSpread = (degreeStep * (totalChildren - 1)) / 2;
+        const startAngle = sectorCenter - halfSpread;
+        
+        const angleDegrees = startAngle + (siblingIndex * degreeStep);
         
         // Convert to radians for calculation
         const angleRadians = (angleDegrees * Math.PI) / 180;
         
-        // Use different radius based on whether parent is expanded - increased distances
-        const childRadius = parentId === expandedNodeId ? 180 : 120;
+        // Use different radius based on whether parent is expanded and number of siblings
+        // Dynamically increase radius for nodes with many children
+        const childCount = siblings.length;
+        const childRadius = (parentId === expandedNodeId || totalChildren > 0) ? 
+          Math.max(180, 160 + childCount * 10) : 
+          Math.max(120, 100 + childCount * 8);
+        
         const x = (parent.x || centerX) + childRadius * Math.cos(angleRadians);
         const y = (parent.y || centerY) + childRadius * Math.sin(angleRadians);
 

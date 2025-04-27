@@ -139,7 +139,7 @@ function App() {
     e.preventDefault();
     
     // Calculate new scale with zoom speed factor
-    const zoomSpeed = 0.1;
+    const zoomSpeed = 0.02;
     const delta = e.deltaY < 0 ? zoomSpeed : -zoomSpeed;
     const newScale = Math.max(0.1, Math.min(2, transform.scale + delta));
     
