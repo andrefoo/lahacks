@@ -13,6 +13,9 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
   const [isExpanding, setIsExpanding] = useState(false);
   const [activeCluster, setActiveCluster] = useState(null);
   const [selectedEdgeId, setSelectedEdgeId] = useState(null);
+  const [hoverNodeId, setHoverNodeId] = useState(null);
+  const hoverTimeoutRef = useRef(null);
+  const menuRef = useRef(null);
   const nodesRef = useRef(nodes);
 
   // Initialize graph with data from props
@@ -52,8 +55,29 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
     }
   }, [nodes, expandedNodeId, clusters, activeCluster]);
 
-  // Handle node expansion
-  const handleNodeExpand = async (nodeId) => {
+  // New handler for expand button click that accepts expansion type
+  const handleExpandClick = (nodeId, expansionType, event) => {
+    // Prevent the click from triggering the node click handler
+    if (event) {
+      event.stopPropagation();
+      event.preventDefault();
+    }
+    
+    // Add console logging to debug
+    console.log(`Expanding node ${nodeId} with type: ${expansionType}`);
+    
+    // Clear hover state
+    setHoverNodeId(null);
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    
+    handleNodeExpand(nodeId, expansionType);
+  };
+
+  // Modified node expansion to handle expansion types
+  const handleNodeExpand = async (nodeId, expansionType = "all") => {
     // Set the expanded node ID immediately for UI feedback
     setExpandedNodeId(nodeId);
 
@@ -66,9 +90,9 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
     setIsExpanding(true);
 
     try {
-      // Fetch node expansion data from API
-      const expansion = await fetchNodeExpansion(nodeId);
-
+      // Fetch node expansion data from API with expansion type
+      const expansion = await fetchNodeExpansion(nodeId, 3, expansionType);
+      
       if (expansion?.nodes?.length) {
         // Add expanded nodes to the graph
         setNodes((prevNodes) => {
@@ -85,6 +109,8 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
               parentId: node.parentId ?? nodeId,
               // Ensure each node has a label
               label: node.label || `Node ${node.id}`,
+              // Track expansion type
+              expansionType: expansionType
             }));
 
           return [...updatedNodes, ...newNodes];
@@ -136,13 +162,6 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
     }
   };
 
-  // New handler for expand button click
-  const handleExpandClick = (nodeId, event) => {
-    // Prevent the click from triggering the node click handler
-    event.stopPropagation();
-    handleNodeExpand(nodeId);
-  };
-
   // Handle cluster activation
   const handleClusterClick = (clusterId) => {
     setActiveCluster(activeCluster === clusterId ? null : clusterId);
@@ -185,19 +204,10 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
           aria-pressed={activeCluster === cluster.id ? "true" : "false"}
           aria-label={`Cluster: ${cluster.label}`}
         >
-          <foreignObject width="1" height="1" style={{ overflow: "visible" }}>
+          <foreignObject width="1" height="1" className="cluster-foreign-object">
             <button
               type="button"
-              style={{
-                background: "none",
-                border: "none",
-                padding: 0,
-                width: "1px",
-                height: "1px",
-                position: "absolute",
-                opacity: 0,
-                pointerEvents: "none",
-              }}
+              className="graph-node-container button"
               aria-pressed={activeCluster === cluster.id ? "true" : "false"}
               aria-label={`Cluster: ${cluster.label}`}
             />
@@ -219,7 +229,6 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
         height="100%"
         aria-label="Knowledge graph visualization"
       >
-        <title>Interactive Knowledge Graph Visualization</title>
         <defs>
           {/* Define marker for directed edges */}
           <marker
@@ -356,7 +365,6 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
                       y={labelY}
                       textAnchor="middle"
                       className={`edge-label ${isSelected ? "selected" : ""}`}
-                      fontSize={isSelected ? "10" : "8"}
                       fontWeight={isSelected ? "bold" : "normal"}
                       style={{ pointerEvents: "all" }}
                     >
@@ -376,10 +384,28 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
         {/* Modified node rendering */}
         {nodes.map((node) => (
           <g
+            
             key={`node-${node.id}`}
+            
             className={
-              isExpanding && node.id === expandedNodeId ? "loading" : ""
+              `graph-node-container ${isExpanding && node.id === expandedNodeId ? "loading" : ""
             }
+          `}
+            onMouseEnter={() => {
+              if (hoverTimeoutRef.current) {
+                clearTimeout(hoverTimeoutRef.current);
+                hoverTimeoutRef.current = null;
+              }
+              setHoverNodeId(node.id);
+            }}
+            onMouseLeave={() => {
+              hoverTimeoutRef.current = setTimeout(() => {
+                // Only hide the menu if we're not hovering over it
+                if (!menuRef.current || !menuRef.current.matches(':hover')) {
+                  setHoverNodeId(null);
+                }
+              }, 300); // Reduced from 500ms for better responsiveness
+            }}
           >
             <Node
               node={node}
@@ -395,28 +421,94 @@ const Graph = ({ graphData, onNodeClick, selectedNodeId, onEdgeClick }) => {
               }
               isSelected={node.id === selectedNodeId}
             />
-            {/* expand button */}
-            {!node.expanded && !isExpanding && (
+            
+            {(!node.expanded && !isExpanding) && (
               <g
-                className="expand-button"
+                className={`expand-options-container ${hoverNodeId === node.id ? 'show-menu' : ''}`}
                 transform={`translate(${node.x + 20}, ${node.y - 20})`}
-                onClick={(e) => handleExpandClick(node.id, e)}
-                onKeyPress={(e) =>
-                  e.key === "Enter" && handleExpandClick(node.id, e)
-                }
-                tabIndex="0"
-                aria-label={`Expand node ${node.label}`}
-                role="button"
+                ref={menuRef}
+                onMouseEnter={() => {
+                  // Clear any pending timeouts when entering the menu
+                  if (hoverTimeoutRef.current) {
+                    clearTimeout(hoverTimeoutRef.current);
+                    hoverTimeoutRef.current = null;
+                  }
+                }}
               >
-                <circle r="8" fill="#ffffff" stroke="#666666" strokeWidth="1" />
-                <text
-                  textAnchor="middle"
-                  dy=".3em"
-                  fontSize="12"
-                  fill="#666666"
-                >
-                  +
-                </text>
+                {/* Primary expand button */}
+                <g className="expansion-menu">
+                  <circle />
+                  <text>
+                    +
+                  </text>
+                  
+                  {/* Expansion options */}
+                  <g className="expansion-options">
+                    {/* Theory option */}
+                    <g
+                      className="expansion-option theory-option"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExpandClick(node.id, "theory", e);
+                      }}
+                      tabIndex="0"
+                      aria-label={`Expand node ${node.label} with theory`}
+                    >
+                      <circle />
+                      <text>
+                        📚
+                      </text>
+                    </g>
+                    
+                    {/* Experiments option */}
+                    <g
+                      className="expansion-option experiments-option"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExpandClick(node.id, "experiments", e);
+                      }}
+                      tabIndex="0"
+                      aria-label={`Expand node ${node.label} with experiments`}
+                    >
+                      <circle />
+                      <text>
+                        🧪
+                      </text>
+                    </g>
+                    
+                    {/* Philosophical questions option */}
+                    <g
+                      className="expansion-option philosophical-option"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExpandClick(node.id, "philosophical", e);
+                      }}
+                      tabIndex="0"
+                      aria-label={`Expand node ${node.label} with philosophical questions`}
+                    >
+                      <circle />
+                      <text>
+                        🤔
+                      </text>
+                    </g>
+                    
+                    {/* Practical uses option */}
+                    <g
+                      className="expansion-option practical-option"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleExpandClick(node.id, "practical", e);
+                      }}
+                      tabIndex="0"
+                      aria-label={`Expand node ${node.label} with practical uses`}
+                    >
+                      <circle />
+                      <text>
+                        🛠️
+                      </text>
+                    </g>
+                  </g>
+                </g>
               </g>
             )}
           </g>

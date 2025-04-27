@@ -23,6 +23,9 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [startDragPosition, setStartDragPosition] = useState({ x: 0, y: 0 });
   const graphContainerRef = useRef(null);
+  const [isMenuHovered, setIsMenuHovered] = useState(false);
+  const hoverTimeoutRef = useRef(null);
+  const [hoverNodeId, setHoverNodeId] = useState(null);
 
   // Handle prompt submission
   const handlePromptSubmit = async (prompt) => {
@@ -198,9 +201,47 @@ function App() {
     };
   }, [isDragging]);
 
+  const handleNodeMouseEnter = (nodeId) => {
+    setHoverNodeId(nodeId);
+    
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleNodeMouseLeave = () => {
+    // Only set timeout if menu is not being hovered
+    if (!isMenuHovered) {
+      hoverTimeoutRef.current = setTimeout(() => {
+        setHoverNodeId(null);
+      }, 500);
+    }
+  };
+
+  const handleMenuMouseEnter = () => {
+    setIsMenuHovered(true);
+    
+    // Clear any pending hide timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+  };
+
+  const handleMenuMouseLeave = () => {
+    setIsMenuHovered(false);
+    
+    // Set timeout to hide menu
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoverNodeId(null);
+    }, 500);
+  };
+
   return (
     <>
-      <StarTrail />
+      {/*<StarTrail />*/}
       <div className="app-container">
         {/* Header */}
         <header className="app-header">

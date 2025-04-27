@@ -630,8 +630,340 @@ button {
   background: transparent;
 }
 
+/* Expansion menu styles */
+.expand-options-container {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* Show expansion container when specifically told to show via class */
+.expand-options-container.show-menu {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Also show when hovering over associated node */
+.graph-node:hover + .expand-options-container {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Main menu button appearance */
+.expansion-menu {
+  cursor: pointer;
+}
+
+/* Hide expansion options by default */
+.expansion-options {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  transform: scale(0.8);
+  width: 100%;
+  height: 100%;
+}
+
+/* Show options when container has show-menu class */
+.expand-options-container.show-menu .expansion-options {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+/* Individual option styling */
+.expansion-option {
+  cursor: pointer;
+  transition: transform 0.2s;
+  position: relative; /* Added to support tooltip positioning */
+}
+
+.expansion-option text {
+  text-anchor: middle;
+  dominant-baseline: central;  /* Added for vertical centering */
+  font-size: 12px;  /* Increased from 8px */
+}
+
+.expansion-menu text {
+  text-anchor: middle;
+  dominant-baseline: central;  /* Added for vertical centering */
+  font-size: 12px;  /* Increased from 10px */
+  fill: #666666;
+}
+
+/* Node expansion type styles */
+.expansion-type-badge {
+  fill: #666666;
+  font-size: 8px;
+  font-style: italic;
+}
+
+/* Expansion type specific node styles */
+.expansion-theory .node-circle {
+  stroke: #81d4fa; /* Darker shade of the fill */
+}
+
+.expansion-experiments .node-circle {
+  stroke: #81c784; /* Darker shade of the fill */
+}
+
+.expansion-philosophical .node-circle {
+  stroke: #ffd54f; /* Darker shade of the fill */
+}
+
+.expansion-practical .node-circle {
+  stroke: #ef9a9a; /* Darker shade of the fill */
+}
+
+/* Extracted styles from Graph.jsx */
+.graph-node-container {
+  transition: all 0.3s ease;
+}
+
+.graph-node-container.loading {
+  opacity: 0.7;
+}
+
+.cluster-label {
+  cursor: pointer;
+}
+
+.cluster-label.active {
+  font-weight: bold;
+}
+
+.cluster-label text {
+  text-anchor: middle;
+  font-weight: bold;
+}
+
+.edge-label-container {
+  cursor: pointer;
+}
+
+.expand-options-container foreignObject {
+  overflow: visible;
+}
+
+/* Primary expand button styling */
+.expansion-menu circle {
+  r: 10;
+  fill: var(--secondary);
+}
+
+.expansion-menu text {
+  text-anchor: middle;
+  font-size: 10px;
+  fill: var(--primary);
+}
+
+/* Expansion option styling */
+.expansion-option circle {
+  r: 15;
+  fill: var(--secondary);
+}
+
+.theory-option {
+  transform: translate(-40px, 0);
+}
+
+.experiments-option {
+  transform: translate(-20px, -30px);
+}
+
+.philosophical-option {
+  transform: translate(20px, -30px); 
+}
+
+.practical-option {
+  transform: translate(40px, 0);
+}
+
+/* Accessibility button styles */
+.graph-node-container button {
+  background: none;
+  border: none;
+  padding: 0;
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Added missing styles */
+.cluster-foreign-object {
+  overflow: visible;
+}
+
+/* Expansion menu styles */
+.expand-options-container {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+
+/* Show expansion container when specifically told to show via class */
+.expand-options-container.show-menu {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Also show when hovering over associated node */
+.graph-node:hover + .expand-options-container {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Main menu button appearance */
+.expansion-menu {
+  cursor: pointer;
+}
+
+/* Hide expansion options by default */
+.expansion-options {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s, transform 0.3s;
+  transform: scale(0.8);
+  width: 100%;
+  height: 100%;
+}
+
+/* Show options when container has show-menu class */
+.expand-options-container.show-menu .expansion-options {
+  opacity: 1;
+  pointer-events: auto;
+  transform: scale(1);
+}
+
+/* Individual option styling */
+.expansion-option {
+  cursor: pointer;
+  transition: transform 0.2s;
+  position: relative; /* Added to support tooltip positioning */
+}
+
+.expansion-option text {
+  text-anchor: middle;
+  dominant-baseline: central;  /* Added for vertical centering */
+  font-size: 12px;  /* Increased from 8px */
+}
+
+.expansion-menu text {
+  text-anchor: middle;
+  dominant-baseline: central;  /* Added for vertical centering */
+  font-size: 12px;  /* Increased from 10px */
+  fill: #666666;
+}
+
+/* Node expansion type styles */
+.expansion-type-badge {
+  fill: #666666;
+  font-size: 8px;
+  font-style: italic;
+}
+
+/* Expansion type specific node styles */
+.expansion-theory .node-circle {
+  stroke: #81d4fa; /* Darker shade of the fill */
+}
+
+.expansion-experiments .node-circle {
+  stroke: #81c784; /* Darker shade of the fill */
+}
+
+.expansion-philosophical .node-circle {
+  stroke: #ffd54f; /* Darker shade of the fill */
+}
+
+.expansion-practical .node-circle {
+  stroke: #ef9a9a; /* Darker shade of the fill */
+}
+
+/* Extracted styles from Graph.jsx */
+.graph-node-container {
+  transition: all 0.3s ease;
+}
+
+.graph-node-container.loading {
+  opacity: 0.7;
+}
+
+.cluster-label {
+  cursor: pointer;
+}
+
+.cluster-label.active {
+  font-weight: bold;
+}
+
+.cluster-label text {
+  text-anchor: middle;
+  font-weight: bold;
+}
+
+.edge-label-container {
+  cursor: pointer;
+}
+
+.expand-options-container foreignObject {
+  overflow: visible;
+}
+
+/* Primary expand button styling */
+.expansion-menu circle {
+  r: 10;
+  fill: var(--secondary);
+}
+
+.expansion-menu text {
+  text-anchor: middle;
+  font-size: 10px;
+  fill: var(--primary);
+}
+
+/* Expansion option styling */
+.expansion-option circle {
+  r: 15;
+  fill: var(--secondary);
+}
+
+.theory-option {
+  transform: translate(-40px, 0);
+}
+
+.experiments-option {
+  transform: translate(-20px, -30px);
+}
+
+.philosophical-option {
+  transform: translate(20px, -30px); 
+}
+
+.practical-option {
+  transform: translate(40px, 0);
+}
+
+/* Accessibility button styles */
+.graph-node-container button {
+  background: none;
+  border: none;
+  padding: 0;
+  width: 1px;
+  height: 1px;
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Added missing styles */
+.cluster-foreign-object {
+  overflow: visible;
+}
+
 .edge-label.selected {
-  fill: white;
+  font-size: 8px;
   font-weight: bold;
   background: transparent; 
   border: 0px;
@@ -646,4 +978,10 @@ button {
 .edge-label-container text {
   stroke: none;
   paint-order: stroke;
+  fill: white;
+}
+
+.edge-label:not(.selected) {
+  font-size: 8px;
+  font-weight: normal;
 }

@@ -54,6 +54,28 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster, isSelec
     return 'size-lg';
   };
   
+  // Get node color based on expansion type
+  const getNodeFill = () => {
+    // Custom color if specifically set on the node
+    if (node.color) return node.color;
+    
+    // Color based on expansion type
+    const expansionTypeColors = {
+      'theory': '#e1f5fe',      // Light blue
+      'experiments': '#e8f5e9', // Light green
+      'philosophical': '#fff8e1', // Light yellow
+      'practical': '#ffebee'    // Light red
+    };
+    
+    // If this is an expanded node with an expansion type
+    if (node.expansionType && expansionTypeColors[node.expansionType]) {
+      return expansionTypeColors[node.expansionType];
+    }
+    
+    // Default node color from CSS
+    return null; // Let CSS handle it
+  };
+  
   const handleClick = () => {
     onClick(node);
   };
@@ -68,10 +90,13 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster, isSelec
   const lineHeight = 12; // Adjust based on your font size
   const totalHeight = wrappedText.length * lineHeight;
   const startY = -totalHeight / 2 + lineHeight / 2;
+  
+  // Create class name based on expansion type
+  const nodeClass = `graph-node ${node.type || ''} ${isExpanded ? 'expanded' : ''} ${isInActiveCluster ? 'active-cluster' : ''} ${isSelected ? 'selected' : ''} ${node.expansionType ? `expansion-${node.expansionType}` : ''}`;
 
   return (
     <g
-      className={`graph-node ${node.type || ''} ${isExpanded ? 'expanded' : ''} ${isInActiveCluster ? 'active-cluster' : ''} ${isSelected ? 'selected' : ''}`}
+      className={nodeClass}
       transform={`translate(${node.x || 0}, ${node.y || 0})`}
       onClick={handleClick}
       onKeyPress={handleKeyPress}
@@ -88,11 +113,12 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster, isSelec
         />
       </foreignObject>
       
-      {/* Node circle */}
+      {/* Node circle with dynamic fill color based on expansion type */}
       <circle
         r={radius}
         strokeWidth={isExpanded ? 3 : 1.5}
         className="node-circle"
+        fill={getNodeFill()}
       />
       
       {/* Show loading indicator */}
@@ -139,6 +165,19 @@ const Node = ({ node, onClick, isExpanded, isLoading, isInActiveCluster, isSelec
       >
         {node.type || 'node'}
       </text>
+      
+      {/* Expansion type badge if available */}
+      {node.expansionType && node.expansionType !== 'all' && (
+        <text
+          textAnchor="end"
+          x={-radius - 3}
+          y="-5"
+          fontSize="8"
+          className="expansion-type-badge"
+        >
+          {node.expansionType}
+        </text>
+      )}
       
       {/* Bias indicator if present */}
       {node.hasBias && (

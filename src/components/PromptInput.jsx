@@ -31,7 +31,7 @@ const PromptInput = ({ onSubmit, isLoading }) => {
         <img src={logo} alt="Constellation Logo" className="prompt-logo" />
         <h2>Rediscover the Power of Thinking</h2>
         <p className="prompt-subheader">
-          Prompt with a curiosity, a challenge, or an idea. (e.g., 'What causes scientific revolutions?', 'How does bias shape decision-making?', 'What's the future of education?') Watch knowledge unfold in unexpected ways.
+          Start with a curiosity, a challenge, or an idea. (e.g., 'What causes scientific revolutions?', 'How does bias shape decision-making?', 'What's the future of education?') Watch knowledge unfold in unexpected ways.
         </p>
         <form onSubmit={handleSubmit} className="prompt-form">
           <div className="input-wrapper">
